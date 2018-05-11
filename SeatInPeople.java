@@ -18,7 +18,7 @@ public abstract class SeatInPeople implements Serializable {
 	private String IDTemp;
 	private String stateProfile;
 	
-	 protected static SeatInServerInterface stub;
+	static SeatInServerInterface stub;
 	
 	private static final long serialVersionUID = 1;
 
@@ -51,11 +51,13 @@ public abstract class SeatInPeople implements Serializable {
     	this.email=in.readLine();*/
     	
 	}
-	public void sendDate(SeatInPeople user) throws NotBoundException, IOException{
-	
-		
+    public SeatInPeople login(String email) throws RemoteException{
+		stub.login(this);
+    	return null;
+    }
+	public static SeatInServerInterface getStub() {
+		return stub;
 	}
-	
 	
 	public String getID() {
 		return ID;

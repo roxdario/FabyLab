@@ -16,8 +16,7 @@ public interface SeatInServerInterface extends Remote {
 	           AccessException, MessagingException;
 	   public int CheckLogin(String email, String password) throws RemoteException;
 */
-	public String ciaoStringa(SeatInPeople user) throws RemoteException;
-	public boolean checkEmail(String email) throws RemoteException;
-	public boolean insertProfileIntoDatabase(SeatInPeople user) throws RemoteException;
-	public String login(SeatInPeople user) throws RemoteException;
+	   public String login(SeatInPeople person) throws RemoteException;
+	   public boolean checkEmail(String email) throws RemoteException;
+	   public boolean insertProfileIntoDatabase(SeatInPeople person) throws RemoteException;
 }

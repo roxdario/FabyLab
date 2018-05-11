@@ -15,7 +15,7 @@ public class SeatInPlatform {
 	public SeatInPlatform() {
 		// TODO Auto-generated constructor stub
 	}
-	public static void main(String[] args) throws InterruptedException, IOException, NotBoundException { 
+/*public static void main(String[] args) throws InterruptedException, IOException, NotBoundException { 
 	  	
        
  
@@ -48,7 +48,7 @@ public class SeatInPlatform {
 	    }else if (email.equals("Administrator")) {
 	    	SeatInAdmin  Admin = new SeatInAdmin(ID, email, password, host, port);
 	   }
-	 */   
-	}
+	    
+	}*/
 
 }

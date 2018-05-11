@@ -82,19 +82,19 @@ public class SeatInStudent extends SeatInUser  implements Serializable {
     	
 			System.out.println(stub.login(this));
 		
-  /*  	if(stub.insertProfileIntoDatabase(this)){
+   /* 	if(stub.insertProfileIntoDatabase(this)){
 			System.out.println("Inserito correttamente");
 		}else{
 		System.err.println("Inserimento fallito!!");
 		}
-    	
-    	SeatInAdmin admin=new SeatInAdmin("49","rr2", "r3", "zi4oo","5", "6", "7", "dista");
+    	*/
+    	SeatInAdmin admin=new SeatInAdmin("496","rr2", "r3", "rox.dario@gmail.com","5", "6", "7", "dista");
     	System.out.println(admin);
     	if(stub.insertProfileIntoDatabase(admin)){
 			System.out.println("Inserito correttamente");
 		}else{
 			System.err.println("Inserimento fallito!!");
-		}
+		}/*
     	SeatInTeacher t=new SeatInTeacher("6646","2", "3", "ziodocentemerda4","5", "6", "7", "dista");
     	System.out.println(admin);
     	if(stub.insertProfileIntoDatabase(t)){
