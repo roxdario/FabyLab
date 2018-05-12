@@ -2,9 +2,6 @@ package latoServer;
 
 import java.awt.*;
 import javax.swing.*;
-
-import com.sun.xml.internal.ws.client.Stub;
-
 import java.awt.event.*;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,39 +18,27 @@ public class SeatInGui extends JFrame {
     private static final long serialVersionUID = 1;
     private int counterPassword;
     private SeatInStudent user;
-  
-
     public Container mainContainer= getContentPane();
-
 
     public SeatInGui() {
         super("SeatIn");
         mainContainer.setLayout(new FlowLayout());
-        mainContainer.setPreferredSize(new Dimension(555, 555));
-
-
+        mainContainer.setPreferredSize(new Dimension(600, 400));
     }
 
-
-
     public void welcometoSeatIn() {
-
     	counterPassword=0;
         mainContainer.removeAll();
         mainContainer.validate();
         mainContainer.repaint();
         mainContainer.setLayout(new BorderLayout());
-
         mainContainer.add(BorderLayout.CENTER, loginInterface());
         //mainContainer.add(BorderLayout.WEST, registerProfile());
-
         setVisible(true);
         setSize(600,300);
-
     }
-
+    
     public JPanel loginInterface () {
-   
         //  Component componentLogin[] = { new JTextField("nome@ununsubria.it", 20), new JPasswordField("Password", 20),
         //        new JButton("Accedi"), new JButton("Password dimenticata?")};
         JTextField email= new JTextField("nome@ununsubria.it", 20);
@@ -61,7 +46,7 @@ public class SeatInGui extends JFrame {
         passwordForgot.setSize(60,20);
         JButton submit = new JButton("Registrati!");
         JPanel welcomeLogin = new JPanel();
-        welcomeLogin.setLayout(new GridLayout(4, 5));
+        welcomeLogin.setLayout(new GridLayout(5, 3));
         welcomeLogin.add(new JLabel(""));
         welcomeLogin.add(new JLabel(""));
         welcomeLogin.add(new JLabel("Benvenuti nella Piattaforma SeatIn  "));
@@ -80,18 +65,17 @@ public class SeatInGui extends JFrame {
 
             }
         }  );
+        welcomeLogin.add(new JLabel(""));
+        welcomeLogin.add(new JLabel(""));
         JPasswordField passwordField= new JPasswordField("Password", 20);
         passwordField.addFocusListener(new FocusListener() {
-
-
-            //quando clicco sul textField Email scompare il suggerimento
+        	//quando clicco sul textField Email scompare il suggerimento
             public void focusGained(FocusEvent e) {
                 passwordField.setText("password");
             }
 
             @Override
             public void focusLost(FocusEvent e) {
-                //passwordField.setText("password");
             }
         }  );
         // pannello contenente email, pw, password dimenticata, tasto accesso
@@ -160,9 +144,19 @@ public class SeatInGui extends JFrame {
             }
         });
         welcomeLogin.add(passwordField);
+        welcomeLogin.add(new JLabel(""));
+        welcomeLogin.add(new JLabel(""));
         welcomeLogin.add(access);
-        for (int i=0; i<7; i++)
-            welcomeLogin.add(new JLabel(" "));
+        welcomeLogin.add(new JLabel(""));
+        welcomeLogin.add(new JLabel(""));
+        welcomeLogin.add(passwordForgot);
+        passwordForgot.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                passwordForgotten();
+            }
+        });
+        welcomeLogin.add(new JLabel(""));
         welcomeLogin.add(submit);
         submit.addActionListener(new ActionListener() {
             @Override
@@ -174,14 +168,6 @@ public class SeatInGui extends JFrame {
 					e1.printStackTrace();
 				}
                 welcomeLogin.setVisible(false);
-            }
-        });
-        welcomeLogin.add(new JLabel(""));
-        welcomeLogin.add(passwordForgot);
-        passwordForgot.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                passwordForgotten();
             }
         });
         //controlli input
@@ -268,7 +254,7 @@ public class SeatInGui extends JFrame {
                 }*/
 
 
-           //   JOptionPane.showMessageDialog(submit, "Bottone Registrati");
+              JOptionPane.showMessageDialog(submit, "Bottone Registrati");
               SeatInStudent user= new SeatInStudent("7285355","dario","ross", "drossini@studenti.uninsubria.it", null, null, "attivo", 2015,3, "inCorso", "informatica");
 		      try {
 				user.connection();
@@ -455,9 +441,6 @@ public class SeatInGui extends JFrame {
         Container container=getContentPane();
         container.add(panelAfterLogin);
         setVisible(true);
-        
-       
-        
         return panelAfterLogin;
 
     }
