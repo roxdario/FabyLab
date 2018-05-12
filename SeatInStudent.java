@@ -47,65 +47,49 @@ public class SeatInStudent extends SeatInUser  implements Serializable {
 		this.courseState = courseState;
 		this.degreeCourse = degreeCourse;
 	}
-	public SeatInStudent() {
-		// TODO Auto-generated constructor stub
-	}
+
 	public void downloadFile(String pathName){}
 	public void submit(String courseName){}
 	
 
 
-	@Override
-	public void subscription() throws NotBoundException, IOException {
-		super.subscription();
-		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-/*		System.out.println("matricola:");
-    	this.ID=in.readLine();
-		System.out.println("nome:");
-    	this.name=in.readLine();
-    	System.out.println("cognome:");
-    	this.surname=in.readLine();
-		System.out.println("email:");
-    	this.email=in.readLine();
-		//BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-		System.out.println("Anno di iscrizione:");
-		this.enrollmentYear = Integer.parseInt(in.readLine());
-		System.out.println("Anno corso");
-		this.courseYear = Integer.parseInt(in.readLine());
-		System.out.println("Sei in corso?");
-    	this.courseState = in.readLine();
-		System.out.println("Corso di laurea");
-    	this.degreeCourse = in.readLine();*/
-    	this.email="k";
-    	this.password="ciao5";
-    
-    	
-			System.out.println(stub.login(this));
-		
-   /* 	if(stub.insertProfileIntoDatabase(this)){
-			System.out.println("Inserito correttamente");
-		}else{
-		System.err.println("Inserimento fallito!!");
-		}
-    	*/
-    	SeatInAdmin admin=new SeatInAdmin("496","rr2", "r3", "rox.dario@gmail.com","5", "6", "7", "dista");
-    	System.out.println(admin);
-    	if(stub.insertProfileIntoDatabase(admin)){
-			System.out.println("Inserito correttamente");
-		}else{
-			System.err.println("Inserimento fallito!!");
-		}/*
-    	SeatInTeacher t=new SeatInTeacher("6646","2", "3", "ziodocentemerda4","5", "6", "7", "dista");
-    	System.out.println(admin);
-    	if(stub.insertProfileIntoDatabase(t)){
-			System.out.println("Inserito correttamente");
-		}else{
-			System.err.println("Inserimento fallito!!");
-		}
-    	*/
-    	
-    	//super.sendDate(this);
+	
+
+	public int getEnrollmentYear() {
+		return enrollmentYear;
 	}
+
+	public void setEnrollmentYear(int enrollmentYear) {
+		this.enrollmentYear = enrollmentYear;
+	}
+
+	public int getCourseYear() {
+		return courseYear;
+	}
+
+	public void setCourseYear(int courseYear) {
+		this.courseYear = courseYear;
+	}
+
+	public String getCourseState() {
+		return courseState;
+	}
+
+	public void setCourseState(String courseState) {
+		this.courseState = courseState;
+	}
+
+	public String getDegreeCourse() {
+		return degreeCourse;
+	}
+
+	public void setDegreeCourse(String degreeCourse) {
+		this.degreeCourse = degreeCourse;
+	}
+
+	
+
+	
 	
 
 }

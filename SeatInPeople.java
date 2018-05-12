@@ -40,24 +40,59 @@ public abstract class SeatInPeople implements Serializable {
 		// TODO Auto-generated constructor stub
 	}
 
-
-	public void subscription() throws NotBoundException, IOException{
-	/*	BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-		System.out.println("nome:");
-    	this.name=in.readLine();
-    	System.out.println("cognome:");
-    	this.surname=in.readLine();
-		System.out.println("email:");
-    	this.email=in.readLine();*/
-    	
-	}
-    public SeatInPeople login(String email) throws RemoteException{
-		stub.login(this);
-    	return null;
+    public  void connection() throws  RemoteException, NotBoundException{
+        
+        String host="10.24.5.233";
+        int port=1099;
+        Registry reg=LocateRegistry.getRegistry(host, port);
+        
+      //  SeatInServerInterface stub=SeatInPeople.getStub();
+        stub=(SeatInServerInterface)reg.lookup("classeRemota");
+        System.out.println("connesso");
+       
     }
-	public static SeatInServerInterface getStub() {
-		return stub;
+
+	public boolean subscription() throws NotBoundException, IOException{
+		if(stub.insertProfileIntoDatabase(this)){
+			return true;
+		}else{
+			return false;
+		}
 	}
+    public boolean login(String email) throws RemoteException{
+    	System.out.println("email:"+this.email);
+    	System.out.println("psw:"+this.password);
+    	Object x=stub.login(this);
+
+		System.out.println(x);
+		if(x.equals("utente bloccato")){
+			return false;
+		}else if(x.equals("utente inesistente") || x.equals("password errata")){
+			return false;
+		}else{
+			return true;
+		}
+		
+	
+    }
+    
+    public void blockProfile() throws RemoteException {
+		stub.updateProfileState(this, "bloccato");
+	}
+    public void updatePassword() throws IOException {
+    	BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+ 		System.out.println("password:");
+    	String tempPassword=in.readLine();
+    	this.setPassword(tempPassword);
+    	System.out.println("codice di attivazione:");
+    	String tempCode=in.readLine();
+    	if(this.IDTemp.equals(tempCode)){
+    		stub.resetPasswordRequest(this);
+    	}else
+    		System.out.println("ritenta");
+	}
+	
+
 	
 	public String getID() {
 		return ID;

@@ -7,6 +7,7 @@ import com.sun.xml.internal.ws.client.Stub;
 
 import java.awt.event.*;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
@@ -15,9 +16,12 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 public class SeatInInterface extends JFrame {
-    private String UserEmail;
+    private String userEmail;
     private String mail;
     private static final long serialVersionUID = 1;
+    private int counterPassword;
+    private SeatInStudent user;
+  
 
     public Container mainContainer= getContentPane();
 
@@ -30,26 +34,11 @@ public class SeatInInterface extends JFrame {
 
     }
 
-    public static void connection() throws  RemoteException, NotBoundException{
-      if (System.getSecurityManager() == null)
-        {
-            System.setSecurityManager
-                    (new RMISecurityManager());
-        }
-        String host="10.24.6.86";
-        int port=1099;
-        Registry reg=LocateRegistry.getRegistry(host, port);
-        SeatInServerInterface stub=SeatInPeople.getStub();
-        stub=(SeatInServerInterface)reg.lookup("classeRemota");
-        System.out.println("connesso");
-       
-    }
-
 
 
     public void welcometoSeatIn() {
 
-
+    	counterPassword=0;
         mainContainer.removeAll();
         mainContainer.validate();
         mainContainer.repaint();
@@ -97,12 +86,12 @@ public class SeatInInterface extends JFrame {
 
             //quando clicco sul textField Email scompare il suggerimento
             public void focusGained(FocusEvent e) {
-                passwordField.setText("");
+                passwordField.setText("password");
             }
 
             @Override
             public void focusLost(FocusEvent e) {
-                passwordField.setText("password");
+                //passwordField.setText("password");
             }
         }  );
         // pannello contenente email, pw, password dimenticata, tasto accesso
@@ -111,22 +100,45 @@ public class SeatInInterface extends JFrame {
         access.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                mainContainer.removeAll();
-                mainContainer.validate();
-                mainContainer.repaint();
-                mainContainer.setLayout(new BorderLayout());
-       
-                if(whichUser(email.getText()).equals("s")){try {
-					mainContainer.add(BorderLayout.CENTER, mainPanelAfterLoginStudent());
+            	
+            	
+            	userEmail= email.getText();
+            	
+            	if(whichUser(email.getText()).equals("s")){try {
 					 //connessione
-			        connection();
-			        SeatInStudent user= new SeatInStudent();
-			        user.setEmail(email.getText());
-			        user.login(user.getEmail());
+			        SeatInStudent user= new SeatInStudent(null, null, null, email.getText(), passwordField.getText(), null, null, 0,0, null, null);
+			        user.connection();
+			     //login
+			        if(user.login(user.getEmail())){
+			        	if(user.getStateProfile().equals("non attivo")){
+			        		//nuova interfaccia 
+			        		user.updatePassword();
+			        		
+			        	}else{
+			        		mainContainer.removeAll();
+				            mainContainer.validate();
+				            mainContainer.repaint();
+				            mainContainer.setLayout(new BorderLayout());
+				        	mainContainer.add(BorderLayout.CENTER, mainPanelAfterLoginStudent());
+			        	}
+			        }else{
+			        	JOptionPane.showMessageDialog(welcomeLogin, "Errore");
+			        	if(userEmail.equals(email.getText())){
+		            		counterPassword++;
+		            		if(counterPassword >=10){
+		            			user.blockProfile();
+		            		}
+		            	}else{
+		            		counterPassword=1;
+		            	}
+			        }
 				} catch (RemoteException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (NotBoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}}
@@ -155,7 +167,12 @@ public class SeatInInterface extends JFrame {
         submit.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                registerProfile();
+                try {
+					registerProfile();
+				} catch (NotBoundException | IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
                 welcomeLogin.setVisible(false);
             }
         });
@@ -190,7 +207,7 @@ public class SeatInInterface extends JFrame {
 		
 	}
 
-	public JPanel registerProfile() {
+	public JPanel registerProfile() throws NotBoundException, IOException {
         Container container = getContentPane();
         JPanel submit=new JPanel();
         JTextField registerInformation[] = {
@@ -251,7 +268,27 @@ public class SeatInInterface extends JFrame {
                 }*/
 
 
-              JOptionPane.showMessageDialog(submit, "Bottone Registrati");
+           //   JOptionPane.showMessageDialog(submit, "Bottone Registrati");
+              SeatInStudent user= new SeatInStudent("7285355","dario","ross", "drossini@studenti.uninsubria.it", null, null, "attivo", 2015,3, "inCorso", "informatica");
+		      try {
+				user.connection();
+			} catch (RemoteException | NotBoundException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+             
+             
+       
+              try {
+				if(user.subscription()){
+				  	JOptionPane.showMessageDialog(SeatInInterface.this, "Inserito");
+				  }else{
+				  	JOptionPane.showMessageDialog(SeatInInterface.this, "Non Inserito");
+				  }
+			} catch (HeadlessException | NotBoundException | IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 
             }
         });
@@ -315,8 +352,17 @@ public class SeatInInterface extends JFrame {
        // mainContainer.add(submit);
 
         container.add(submit);
-
         setVisible(true);
+       /* user.setName(registerInformation[0].getText());
+        user.setSurname(registerInformation[1].getText());
+        user.setID(registerInformation[2].getText());
+        user.setEmail(registerInformation[3].getText());
+        user.setDegreeCourse(registerInformation[5].getText());
+        user.setEnrollmentYear(Integer.parseInt(registerInformation[6].getText()));
+        user.setCourseState(registerInformation[7].getText());
+        user.setCourseYear(3);
+       */
+      
         return submit;
     }
 
