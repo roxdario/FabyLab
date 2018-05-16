@@ -9,7 +9,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 
-public abstract class SeatInPeople implements Serializable {
+public class SeatInPeople implements Serializable {
 	private String ID;
 	private String name;
 	private String surname;
@@ -42,11 +42,9 @@ public abstract class SeatInPeople implements Serializable {
 
     public  void connection() throws  RemoteException, NotBoundException{
         
-        String host="10.24.5.233";
-        int port=1099;
+        String host="10.24.2.33";
+        int port=2099;
         Registry reg=LocateRegistry.getRegistry(host, port);
-        
-      //  SeatInServerInterface stub=SeatInPeople.getStub();
         stub=(SeatInServerInterface)reg.lookup("classeRemota");
         System.out.println("connesso");
        
@@ -59,37 +57,51 @@ public abstract class SeatInPeople implements Serializable {
 			return false;
 		}
 	}
-    public boolean login(String email) throws RemoteException{
+    public String login(String email) throws RemoteException{
     	System.out.println("email:"+this.email);
     	System.out.println("psw:"+this.password);
     	Object x=stub.login(this);
-
+    	SeatInPeople serverUser= (SeatInPeople) x;
+    
 		System.out.println(x);
 		if(x.equals("utente bloccato")){
-			return false;
-		}else if(x.equals("utente inesistente") || x.equals("password errata")){
-			return false;
+			return "utente bloccato";
+		}else if(x.equals("utente inesistente")){
+			return "utente inesistente";
+		}else if(x.equals("password errata")){
+			return "password errata";
 		}else{
-			return true;
+			this.getPerson(serverUser);
+			
+			if( serverUser instanceof SeatInStudent){
+				this.getStudent((SeatInStudent) serverUser);
+				return "student";
+			}else if( serverUser instanceof SeatInTeacher){
+				this.getTeacher((SeatInTeacher) serverUser);
+				return "teacher";
+			}else if( serverUser instanceof SeatInAdmin){
+				this.getAdmin((SeatInAdmin) serverUser);
+				return "admin";
+			}
 		}
-		
+		return null;	
 	
     }
-    
+   
+   
     public void blockProfile() throws RemoteException {
 		stub.updateProfileState(this, "bloccato");
 	}
-    public void updatePassword() throws IOException {
-    	BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
- 		System.out.println("password:");
-    	String tempPassword=in.readLine();
-    	this.setPassword(tempPassword);
-    	System.out.println("codice di attivazione:");
-    	String tempCode=in.readLine();
-    	if(this.IDTemp.equals(tempCode)){
-    		stub.resetPasswordRequest(this);
-    	}else
-    		System.out.println("ritenta");
+    public boolean checkID(String id){
+    	if(this.IDTemp.equals(id)){
+    		return true;
+    	}else{
+    		return false;
+    	}
+    }
+    public void updatePassword(String password) throws IOException {
+    	this.setPassword(password);
+    	stub.resetPasswordRequest(this);
 	}
 	
 
@@ -166,6 +178,25 @@ public abstract class SeatInPeople implements Serializable {
 
 	public void viewProfile() {}
 	public  void sendEmail() {}
+
+	public void getPerson(SeatInPeople serverUser) {
+		this.setID(serverUser.getID());
+		this.setName(serverUser.getName());
+		this.setSurname(serverUser.getSurname());
+		//this.setEmail(serverUser.getEmail());
+		//this.setPassword(serverUser.getPassword());
+		//this.setIDTemp(serverUser.getIDTemp());
+		this.setStateProfile(serverUser.getStateProfile());
+	}
+	public void getStudent(SeatInStudent s) {
+		
+	}
+	public void getAdmin(SeatInAdmin a) {
+		
+	}
+	public void getTeacher(SeatInTeacher t) {
+		
+	}
 	
 	
 	

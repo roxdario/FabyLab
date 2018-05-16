@@ -6,7 +6,7 @@ import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-public class SeatInTeacher extends SeatInUser implements Runnable{
+public class SeatInTeacher extends SeatInUser {
 	static final String user="T";
 	private static final long serialVersionUID = 1;
 	
@@ -36,12 +36,113 @@ public class SeatInTeacher extends SeatInUser implements Runnable{
 		this.department = department;
 	}
 
-	public void run() {
-		try{
-			//this.login(user);
-		} catch(Exception e) {}
-	}
 	
+	
+	@Override
+	public void getTeacher(SeatInTeacher t) {
+		// TODO Auto-generated method stub
+		super.getTeacher(t);
+		this.setDepartment(t.getDepartment());
+	}
+
+
+
+	public String getDepartment() {
+		return department;
+	}
+
+
+
+	public void setDepartment(String department) {
+		this.department = department;
+	}
+
+
+
+	public String getID() {
+		return ID;
+	}
+
+
+
+	public void setID(String iD) {
+		ID = iD;
+	}
+
+
+
+	public String getName() {
+		return name;
+	}
+
+
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+
+
+	public String getSurname() {
+		return surname;
+	}
+
+
+
+	public void setSurname(String surname) {
+		this.surname = surname;
+	}
+
+
+
+	public String getEmail() {
+		return email;
+	}
+
+
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+
+
+	public String getPassword() {
+		return password;
+	}
+
+
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+
+
+	public String getIDTemp() {
+		return IDTemp;
+	}
+
+
+
+	public void setIDTemp(String iDTemp) {
+		IDTemp = iDTemp;
+	}
+
+
+
+	public String getStateProfile() {
+		return stateProfile;
+	}
+
+
+
+	public void setStateProfile(String stateProfile) {
+		this.stateProfile = stateProfile;
+	}
+
+
+
 	public void downloadFile(String pathName){}
 	public void submit(String courseName){}
 	public void uploadFile(String pathName){}
