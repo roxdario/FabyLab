@@ -12,14 +12,17 @@ public class Node implements Serializable{
     private String code = null;
     private String visibility = null;
     private String file;
+    private int year;
     private List<Node> children = new ArrayList<>();
     private Node parent = null;
 
     //solo per la radice
     //nome del corso + descrizione corso
-    public Node(String name, String description) {
+    public Node(String name, String description, String code, int year) {
         this.name = name;
         this.description = description;
+        this.code=code;
+        this.year=year;
     }
 
     //sezione corso o sottosezione
@@ -88,6 +91,7 @@ public class Node implements Serializable{
     public String getFile() {
         return this.file;
     }
+    public int getYear() {return this.year;}
 
     public void setVisibility(String visibility) {
         this.visibility = visibility;
@@ -160,4 +164,26 @@ public class Node implements Serializable{
             }
 
         }
+        public List<String> findNode(String code){
+        List<Node> n=this.getChildren();
+        List<String> lic=new ArrayList<String>();
+        for (Node node: n)
+        {
+            if (node.getCode()==code)
+            {
+                List<Node> found=node.getChildren();
+                for (Node f:found)
+                lic.add(f.getCode());
+
+            }
+            else
+            {
+               List<Node> secondList=node.getChildren();
+               for (Node sln: secondList)
+                   sln.findNode(code);
+            }
+        }
+        return lic;
+        }
+
     }
