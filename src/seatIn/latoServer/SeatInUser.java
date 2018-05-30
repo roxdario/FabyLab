@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.List;
 
 public class SeatInUser extends SeatInPeople implements Serializable{
 	private static final long serialVersionUID = 1;
@@ -149,6 +150,10 @@ public class SeatInUser extends SeatInPeople implements Serializable{
 	public void setStateProfile(String stateProfile) {
 		// TODO Auto-generated method stub
 		super.setStateProfile(stateProfile);
+	}
+
+	public List<String[]> viewAllCourseInformation() throws RemoteException {
+		return stub.viewAllCourseInformation();
 	}
 
 

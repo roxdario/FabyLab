@@ -7,6 +7,10 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.sql.SQLException;
+import java.util.List;
+
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
 
 
 public abstract class  SeatInPeople implements Serializable {
@@ -38,7 +42,7 @@ public abstract class  SeatInPeople implements Serializable {
 
 
     public  void connection() throws  RemoteException, NotBoundException{
-        String host="192.168.1.83";
+        String host="192.168.1.10";
         int port=2099;
         Registry reg=LocateRegistry.getRegistry(host, port);
         stub=(SeatInServerInterface)reg.lookup("classeRemota");
@@ -59,8 +63,10 @@ public abstract class  SeatInPeople implements Serializable {
              return "utente inesistente";
          case "password errata":
              return "password errata";
+         case "not found":
+        	 return "not found";
          default:
- 			return "people";
+ 			return "errore";
 		 }
      }
 	public void setInformation(SeatInPeople s) {
@@ -73,7 +79,7 @@ public abstract class  SeatInPeople implements Serializable {
 		this.setStateProfile(s.getStateProfile());	
 	}
 
-	public boolean subscription() throws NotBoundException, IOException{
+	public boolean subscription() throws NotBoundException, IOException, MessagingException{
 		if(stub.insertProfileIntoDatabase(this)){
 			return true;
 		}else{
@@ -94,7 +100,7 @@ public abstract class  SeatInPeople implements Serializable {
     		return true;
     	}
     }
-    public void updatePassword(String password) throws IOException {
+    public void updatePasswordandProfile(String password) throws IOException, MessagingException {
     	this.setPassword(password);
     	stub.resetPasswordRequest(this);
     	this.setStateProfile("attivo");
@@ -174,8 +180,46 @@ public abstract class  SeatInPeople implements Serializable {
 	}
 	
 	
-	public void updatePassword() throws RemoteException {
-		stub.resetPasswordRequest(this);
+	public boolean updatePassword() throws RemoteException, MessagingException {
+		return stub.resetPasswordRequest(this);
+		
+	}
+
+	public void logout() throws RemoteException {
+		stub.logout(this.getEmail());
+	}
+
+	public void changeProfileRequest(String email, String fieldToChange, String newParameter, String tipology) throws RemoteException {
+		stub.changeProfileRequest(email, fieldToChange, newParameter, tipology);
+	}
+	public boolean sendSblockRequest(String email, String fieldToChange, String newParameter, String tipology) throws RemoteException {
+		 if(stub.changeProfileRequest(email, fieldToChange, newParameter, tipology)){
+			 return true;
+		 }else{
+			 return false;
+		 }
+		 
+	}
+	
+	public List<String[]> teacherTeachesCourse (String code, int year)  {
+		try {
+			return stub.teacherTeachesCourse(code,year);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public Object passwordForgotten(String email) throws SQLException, RemoteException, MessagingException{
+		return stub.passwordForgotten(email);
+	}
+	public boolean sendEmailForNewsletter(String user, String password, List<String> toList, String subject, String body) throws RemoteException, MessagingException{
+		return stub.sendEmailForNewsletter(user, password, toList, subject, body);
+	}
+	public boolean sendEmail (String from, String to, String password, String object, String body) throws RemoteException, MessagingException{
+		return stub.sendEmail(from, to, password, object, body);
 		
 	}
 	

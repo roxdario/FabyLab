@@ -6,6 +6,12 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.sql.SQLException;
+import java.util.List;
+
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
+
+
 
 public class SeatInTeacher extends SeatInUser {
 	static final String user="T";
@@ -258,15 +264,47 @@ public class SeatInTeacher extends SeatInUser {
 		this.setDepartment(serverUser.getDepartment());	
 	}
 
-	public void downloadFile(String pathName){}
-	public void submit(String courseName){}
-	public void uploadFile(String pathName){}
+	public boolean updatePassword() throws RemoteException, MessagingException {
+		return stub.resetPasswordRequest(this);
+		
+	}
 
+	public void logout() throws RemoteException {
+		stub.logout(this.getEmail());
+	}
 
-	public Object teacherEmailForStudentEmailSender() {
-		// TODO Auto-generated method stub
+	public void changeProfileRequest(String email, String fieldToChange, String newParameter, String tipology) throws RemoteException {
+		stub.changeProfileRequest(email, fieldToChange, newParameter, tipology);
+	}
+
+	public List<String[]> teacherTeachesCourse (String code, int year)  {
+		try {
+			return stub.teacherTeachesCourse(code,year);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
+
+	public Object passwordForgotten(String email) throws SQLException, RemoteException, MessagingException{
+		return stub.passwordForgotten(email);
+	}
+
+	public List<String> teacherEmailForStudentEmailSender(String courseCode, int courseYear) throws RemoteException, SQLException {
+		// TODO Auto-generated method stub
+		return stub.teacherEmailForStudentEmailSender(courseCode, courseYear);
+	}
+
+
+	public List<String> getCoursesTeached(String text) throws RemoteException, SQLException {
+		return stub.getCoursesTeached(text);
+	}
+	public List<String>getStudentsEmailforNewsletter(String courseName, int year) throws RemoteException, SQLException{
+		return stub.getStudentsEmailforNewsletter( courseName, year);
+	}
+	
 	
 	
 

@@ -225,9 +225,10 @@ public class SeatInStudent extends SeatInUser  implements Serializable {
 		// TODO Auto-generated method stub
 		super.setStateProfile(stateProfile);
 	}
-
-	public List<String> showCourseForaStudyPlan(String text) throws RemoteException, SQLException {
+	
+	public List<String[]> showCourseForaStudyPlan(String text) throws RemoteException, SQLException {
 		// TODO Auto-generated method stub
+		
 		return stub.showCourseFromStudyPlan(text);
 	}
 
@@ -238,6 +239,15 @@ public class SeatInStudent extends SeatInUser  implements Serializable {
 		return stub.createCourseTree(info, year);
 	}
 
+
+	public List<String[]> studentDegreeWithoutStudentOne() throws SQLException, RemoteException {
+		return stub.courseDegreeWithoutStudentOne(this.getDegreeCourse());
+	}
+
+
+	public List<String[]> courseNotInStudyPlan(String code) throws SQLException, RemoteException {
+		return stub.courseNotInStudyPlan(code,  this.enrollmentYear);
+	}
 	
 
 	

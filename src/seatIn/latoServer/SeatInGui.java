@@ -2,6 +2,9 @@ package seatIn.latoServer;
 
 import java.awt.*;
 import javax.swing.*;
+
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
+
 import java.awt.event.*;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,21 +18,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SeatInGui extends JFrame {
-    private String userEmail;
+    private String userEmail= "empty";
     private String mail;
+    private String IDTemp;
+    private String psw;
     private static final long serialVersionUID = 1;
     private int counterPassword;
     public Container mainContainer= getContentPane();
     private SeatInPeople user;
     private SeatInStudent student;
     private SeatInTeacher teacher;
-    private SeatInAdmin admin;
+    private SeatInAdmin administrator;
     private String utenza;
+    private static final long MLPSW=1;//lunghezza minima della psw
 
     public SeatInGui() {
         super("SeatIn");
         mainContainer.setLayout(new FlowLayout());
         mainContainer.setPreferredSize(new Dimension(600, 400));
+        
     }
 
     /** Contanier Rincipale
@@ -47,12 +54,57 @@ public class SeatInGui extends JFrame {
         setSize(600,300);
     }
 
+    
+    private String whichUser(String text) {
+        String[] temp= text.split("@");
+        text=temp[1];
+        if(text.startsWith("s")){
+            return "s";
+        }else if(text.startsWith("t")){
+            return "t";
+        }else if(text.startsWith("a")){
+            return "a";
+        }
+        return "-1";
+
+    }
+    public boolean loginCheck(String email,String psw){
+    	String[] temp= email.split("@");
+    	if(temp.length!=2){
+    		return false;
+    	}else{
+    		  email=temp[1];
+    		  switch (utenza){
+    		  case "Studente":
+    			  if(email.equals("studenti.uninsubria.it")&&(psw.length()>=MLPSW)){
+    				  return true;
+    			  }else{
+    				  return false;
+    			  }	
+    		  case "Docente":
+    			  //TODO togliere lo studenti
+    			  if(email.equals("uninsubria.it")||email.equals("studenti.uninsubria.it")&&(psw.length()>=MLPSW)){
+    				  return true;
+    			  }else{
+    				  return false;
+    			  }
+    		  case "Admin":
+    			  if((email.equals("uninsubria.it")||email.equals("studenti.uninsubria.it"))&&(psw.length()>=MLPSW)){
+    				  return true;
+    			  }else{
+    				  return false;
+    			  }	
+    		  default:
+    		  return false;
+    		  } 
+    	}
+    }
     /** Panello di Login
      * @throws NotBoundException
-     * @throws RemoteException **/
+     * @throws RemoteException **/   
     public JPanel loginInterface () throws RemoteException, NotBoundException {
         //connessione se non connesso bloccare pulsanti
-
+       
 
         final JTextField email= new JTextField("nome@ununsubria.it", 20);
         JButton passwordForgot= new JButton("Password dimenticata");
@@ -105,171 +157,238 @@ public class SeatInGui extends JFrame {
         access.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                
                 utenza=(String) type.getSelectedItem();
-                if(utenza.equals("Studente")){
-                    student= new SeatInStudent(null, null, null, null, null, null, null, 0, 0, null, null);
-                    student.setEmail(email.getText());
-                    student.setPassword(passwordField.getText());
-                    try {
-                        student.connection();
-                    } catch (RemoteException | NotBoundException e2) {
-                        // TODO Auto-generated catch block
-                        e2.printStackTrace();
-                    }
-                    try {
-                        if(student.login().equals("student")){
-                            System.out.println(student.getStateProfile());
-                            if((student.getStateProfile()).equals("non attivo")){
-                                //nuova interfaccia
-                                String tempID = JOptionPane.showInputDialog ("Inserisci codice attivazione");
-                                while(student.checkID(tempID)){
-                                    tempID = JOptionPane.showInputDialog ("Errore, Rinserisci codice attivazione");
-                                }
-                                String password = JOptionPane.showInputDialog ("Inserisci nuova password");
-                                student.updatePassword(password);
-                            }else{
-                                mainContainer.removeAll();
-                                mainContainer.validate();
-                                mainContainer.repaint();
-                                mainContainer.setLayout(new BorderLayout());
-                                mainContainer.add(BorderLayout.CENTER, mainPanelAfterLoginStudent());
-                                //welcomeLogin.setVisible(false);
-                                loginInterface().setVisible(false);
-
-                            }
-                        }else{
-                            JOptionPane.showMessageDialog(welcomeLogin, "Errore");
-                            if(userEmail.equals(student.getEmail())){
-                                counterPassword++;
-                                if(counterPassword >=10){
-                                    try {
-                                        student.blockProfile();
-                                    } catch (RemoteException e1) {
-                                        // TODO Auto-generated catch block
-                                        e1.printStackTrace();
-                                    }
-                                }
-                            }else{
-                                counterPassword=1;
-                            }
-                        }
-                    } catch (HeadlessException | IOException | NotBoundException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
-                }else if(utenza.equals("Docente")){
-                    teacher = new SeatInTeacher(null, null, null, null, null, null, null,null);
-                    teacher.setEmail(email.getText());
-                    teacher.setPassword(passwordField.getText());
-                    try {
-                        teacher.connection();
-                    } catch (RemoteException | NotBoundException e2) {
-                        // TODO Auto-generated catch block
-                        e2.printStackTrace();
-                    }
-                    try {
-                        if(teacher.login().equals("teacher")){
-                            if((teacher.getStateProfile()).equals("non attivo")){
-                                //nuova interfaccia
-                                String tempID = JOptionPane.showInputDialog ("Inserisci codice attivazione");
-                                while(teacher.checkID(tempID)){
-                                    tempID = JOptionPane.showInputDialog ("Errore, Rinserisci codice attivazione");
-                                }
-                                String password = JOptionPane.showInputDialog ("Inserisci nuova password");
-                                teacher.updatePassword(password);
-                            }else{
-                                mainContainer.removeAll();
-                                mainContainer.validate();
-                                mainContainer.repaint();
-                                mainContainer.setLayout(new BorderLayout());
-                                mainContainer.add(BorderLayout.CENTER, teacherPanel());
-                                //welcomeLogin.setVisible(false);
-                                loginInterface().setVisible(false);
-
-                            }
-                        }else{
-                            JOptionPane.showMessageDialog(welcomeLogin, "Errore");
-                            if(userEmail.equals(teacher.getEmail())){
-                                counterPassword++;
-                                if(counterPassword >=10){
-                                    try {
-                                        teacher.blockProfile();
-                                    } catch (RemoteException e1) {
-                                        // TODO Auto-generated catch block
-                                        e1.printStackTrace();
-                                    }
-                                }
-                            }else{
-                                counterPassword=1;
-                            }
-                        }
-                    } catch (HeadlessException | IOException | NotBoundException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
-                }else if(utenza.equals("Admin")){
-                    admin = new SeatInAdmin(null, null, null, null, null, null, null,null);
-                    admin.setEmail(email.getText());
-                    admin.setPassword(passwordField.getText());
-                    try {
-                        admin.connection();
-                    } catch (RemoteException | NotBoundException e2) {
-                        // TODO Auto-generated catch block
-                        e2.printStackTrace();
-                    }
-                    try {
-                        if(admin.login().equals("admin")){
-                            if((admin.getStateProfile()).equals("non attivo")){
-                                //nuova interfaccia
-                                String tempID = JOptionPane.showInputDialog ("Inserisci codice attivazione");
-                                while(admin.checkID(tempID)){
-                                    tempID = JOptionPane.showInputDialog ("Errore, Rinserisci codice attivazione");
-                                }
-                                String password = JOptionPane.showInputDialog ("Inserisci nuova password");
-                                admin.updatePassword(password);
-                            }else{
-                                mainContainer.removeAll();
-                                mainContainer.validate();
-                                mainContainer.repaint();
-                                mainContainer.setLayout(new BorderLayout());
-                                mainContainer.add(BorderLayout.CENTER, adminPanel());
-                                //welcomeLogin.setVisible(false);
-                                loginInterface().setVisible(false);
-
-                            }
-                        }else{
-                            JOptionPane.showMessageDialog(welcomeLogin, "Errore");
-                            if(userEmail.equals(admin.getEmail())){
-                                counterPassword++;
-                                if(counterPassword >=10){
-                                    try {
-                                        admin.blockProfile();
-                                    } catch (RemoteException e1) {
-                                        // TODO Auto-generated catch block
-                                        e1.printStackTrace();
-                                    }
-                                }
-                            }else{
-                                counterPassword=1;
-                            }
-                        }
-                    } catch (HeadlessException | IOException | NotBoundException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
+                if(loginCheck(email.getText(),passwordField.getText())){
+                    if(utenza.equals("Studente")){
+	                    student= new SeatInStudent(null, null, null, null, null, null, null, 0, 0, null, null);
+	                    student.setEmail(email.getText());
+	                    student.setPassword(passwordField.getText());
+	                    try {
+	                        student.connection();
+	                    } catch (RemoteException | NotBoundException e2) {
+	                        // TODO Auto-generated catch block
+	                        e2.printStackTrace();
+	                    }
+	                    try {
+	                        switch(student.login()){
+	                        case "student":
+	                            System.out.println(student.getStateProfile());
+	                            switch(student.getStateProfile()){
+	                        	case"non attivo":
+	                        		activationUser();
+	                        		welcomeLogin.setVisible(false);	                                //nuova interfaccia
+	                               
+	                                break;
+	                        	case "attivo":
+	                        		mainContainer.removeAll();
+	                                mainContainer.validate();
+	                                mainContainer.repaint();
+	                                mainContainer.setLayout(new BorderLayout());
+	                                mainContainer.add(BorderLayout.CENTER, mainPanelAfterLoginStudent());
+	                                loginInterface().setVisible(false);
+	                                break;
+	                        	case "bloccato":
+	                        		String block = JOptionPane.showInputDialog ("Utente bloccato, fai richieta per sblocco profilo");
+	                        		break;
+	                            }
+	                            break;
+	                        case "password errata":
+	                        	if(userEmail.equals("empty")){
+	                                JOptionPane.showMessageDialog(welcomeLogin, "Password errata, rimangono:"+9+" tentativi"+student.getEmail());
+	                                counterPassword=1;
+	                                userEmail=student.getEmail();
+	                        	}else if(userEmail.equals(student.getEmail())){
+	                        		 counterPassword++;
+	                        		JOptionPane.showMessageDialog(welcomeLogin, "Password errata, rimangono:"+(10-counterPassword)+" tentativi"+userEmail);
+	                                if(counterPassword >=10){
+	                                    try {
+	                                        student.blockProfile();
+	                                        JOptionPane.showInputDialog ("Utente bloccato, fai richieta per sblocco profilo");
+	                                    } catch (RemoteException e1) {
+	                                        // TODO Auto-generated catch block
+	                                        e1.printStackTrace();
+	                                    }
+	                                }
+	                        	}                      
+	                            break;
+	                        case "utente inesistente":
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "Utente inesistente");
+	                        	break;
+	                        case "not found":
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "User not found, check your status");
+	                        	break;
+	                        default:
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "Utente inesistente");
+	                        }
+	                        
+	                    } catch (HeadlessException | IOException | NotBoundException e1) {
+	                        // TODO Auto-generated catch block
+	                        e1.printStackTrace();
+	                    }
+	                }else if(utenza.equals("Docente")){
+	                	teacher = new SeatInTeacher(null, null, null, null, null, null, null,null);
+	                    teacher.setEmail(email.getText());
+	                    teacher.setPassword(passwordField.getText());
+	                    try {
+	                        teacher.connection();
+	                    } catch (RemoteException | NotBoundException e2) {
+	                        // TODO Auto-generated catch block
+	                        e2.printStackTrace();
+	                    }
+	                    try {
+	                        switch(teacher.login()){
+	                        case "teacher":
+	                            System.out.println(teacher.getStateProfile());
+	                            switch(teacher.getStateProfile()){
+	                        	case"non attivo":
+	                        		 //nuova interfaccia
+	                        		activationUser();
+	                        		welcomeLogin.setVisible(false);
+	                                break;
+	                        	case "attivo":
+	                        		 mainContainer.removeAll();
+	                                 mainContainer.validate();
+	                                 mainContainer.repaint();
+	                                 mainContainer.setLayout(new BorderLayout());
+	                                 mainContainer.add(BorderLayout.CENTER, teacherPanel());
+	                                 //welcomeLogin.setVisible(false);
+	                                 loginInterface().setVisible(false);
+	                                break;
+	                        	case "bloccato":
+	                        		String block = JOptionPane.showInputDialog ("Utente bloccato, fai richieta per sblocco profilo");
+	                        		break;
+	                            }
+	                            break;
+	                        case "password errata":
+	                        	if(userEmail.equals("empty")){
+	                                JOptionPane.showMessageDialog(welcomeLogin, "Password errata, rimangono:"+9+" tentativi"+teacher.getEmail());
+	                                counterPassword=1;
+	                                userEmail=teacher.getEmail();
+	                        	}else if(userEmail.equals(teacher.getEmail())){
+	                        		 counterPassword++;
+	                        		JOptionPane.showMessageDialog(welcomeLogin, "Password errata, rimangono:"+(10-counterPassword)+" tentativi"+userEmail);
+	                                if(counterPassword >=10){
+	                                    try {
+	                                        teacher.blockProfile();
+	                                        JOptionPane.showInputDialog ("Utente bloccato, fai richieta per sblocco profilo");
+	                                    } catch (RemoteException e1) {
+	                                        // TODO Auto-generated catch block
+	                                        e1.printStackTrace();
+	                                    }
+	                                }
+	                        	}                      
+	                            break;
+	                        case "utente inesistente":
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "Utente inesistente");
+	                        	break;
+	                        case "not found":
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "User not found, check your status");
+	                        	break;
+	                        default:
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "Utente inesistente");
+	                        }
+	                        
+	                    } catch (HeadlessException | IOException | NotBoundException e1) {
+	                        // TODO Auto-generated catch block
+	                        e1.printStackTrace();
+	                    }
+	                }else if(utenza.equals("Admin")){
+	                	administrator = new SeatInAdmin(null, null, null, null, null, null, null,null);
+	                    administrator.setEmail(email.getText());
+	                    administrator.setPassword(passwordField.getText());
+	                    try {
+	                        administrator.connection();
+	                    } catch (RemoteException | NotBoundException e2) {
+	                        // TODO Auto-generated catch block
+	                        e2.printStackTrace();
+	                    }
+	                    try {
+	                        switch(administrator.login()){
+	                        case "admin":
+	                            System.out.println(administrator.getStateProfile());
+	                            switch(administrator.getStateProfile()){
+	                        	case"non attivo":
+	                        		 //nuova interfaccia
+	                        		activationUser();
+	                        		welcomeLogin.setVisible(false);
+	                                break;
+	                        	case "attivo":
+	                        		 mainContainer.removeAll();
+	                                 mainContainer.validate();
+	                                 mainContainer.repaint();
+	                                 mainContainer.setLayout(new BorderLayout());
+	                                 mainContainer.add(BorderLayout.CENTER, adminPanel());
+	                                 //welcomeLogin.setVisible(false);
+	                                 loginInterface().setVisible(false);
+	                                break;
+	                        	case "bloccato":
+	                        		String block = JOptionPane.showInputDialog ("Utente bloccato, fai richieta per sblocco profilo");
+	                        		break;
+	                            }
+	                            break;
+	                        case "password errata":
+	                        	if(userEmail.equals("empty")){
+	                                JOptionPane.showMessageDialog(welcomeLogin, "Password errata, rimangono:"+9+" tentativi"+administrator.getEmail());
+	                                counterPassword=1;
+	                                userEmail=administrator.getEmail();
+	                        	}else if(userEmail.equals(teacher.getEmail())){
+	                        		 counterPassword++;
+	                        		JOptionPane.showMessageDialog(welcomeLogin, "Password errata, rimangono:"+(10-counterPassword)+" tentativi"+userEmail);
+	                                if(counterPassword >=10){
+	                                    try {
+	                                        administrator.blockProfile();
+	                                        JOptionPane.showInputDialog ("Utente bloccato, fai richieta per sblocco profilo");
+	                                    } catch (RemoteException e1) {
+	                                        // TODO Auto-generated catch block
+	                                        e1.printStackTrace();
+	                                    }
+	                                }
+	                        	}                      
+	                            break;
+	                        case "utente inesistente":
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "Utente inesistente");
+	                        	break;
+	                        case "not found":
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "User not found, check your status");
+	                        	break;
+	                        default:
+	                        	JOptionPane.showMessageDialog(welcomeLogin, "Utente inesistente");
+	                        }
+	                        
+	                    } catch (HeadlessException | IOException | NotBoundException e1) {
+	                        // TODO Auto-generated catch block
+	                        e1.printStackTrace();
+	                    }
+	
+	                }else{
+	                	JOptionPane.showMessageDialog(welcomeLogin, "Seleziona una tipologia di utente");
+	                }
                 }else{
-
+                	JOptionPane.showMessageDialog(welcomeLogin, "Dati inseriti non correttamente");
                 }
+	       
                 setVisible(true);
             }
         });
-        welcomeLogin.add(passwordField);  //campo password
-        welcomeLogin.add(new JLabel(""));
-        welcomeLogin.add(new JLabel(""));
+        JButton unlockuser= new JButton("Sblocca utente");
+          unlockuser.addActionListener(new ActionListener() {
+              @Override
+              public void actionPerformed(ActionEvent e) {
+                  userBlocked();
+                  setVisible(true);
+                  welcomeLogin.setVisible(false);
+                 
+              }
+          });
+          welcomeLogin.add(passwordField);  //campo password
+          welcomeLogin.add(new JLabel(""));
+          welcomeLogin.add(new JLabel(""));
+  
+          welcomeLogin.add(access);  //bottone accedi
+          welcomeLogin.add(new JLabel(""));
+          welcomeLogin.add(unlockuser);
 
-        welcomeLogin.add(access);  //bottone accedi
-        welcomeLogin.add(new JLabel(""));
-        welcomeLogin.add(new JLabel(""));
 
         welcomeLogin.add(passwordForgot);
 
@@ -297,23 +416,6 @@ public class SeatInGui extends JFrame {
 
         mail=email.getText();
         return welcomeLogin;
-    }
-
-
-
-    private String whichUser(String text) {
-
-        String[] temp= text.split("@");
-        text=temp[1];
-        if(text.startsWith("s")){
-            return "s";
-        }else if(text.startsWith("t")){
-            return "t";
-        }else if(text.startsWith("a")){
-            return "a";
-        }
-        return "-1";
-
     }
 
     /**Pannello di Registrazione**/
@@ -367,6 +469,7 @@ public class SeatInGui extends JFrame {
         ok.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
+            	/*
                 System.out.println("0"+registerInformation[0].getText());
                 System.out.println("1"+registerInformation[1].getText());
                 System.out.println("2"+registerInformation[2].getText());
@@ -380,7 +483,8 @@ public class SeatInGui extends JFrame {
                 System.out.println("tipoY "+comboBoxYear[1].getSelectedIndex());
                 System.out.println("actor "+comboBoxYear[2].getSelectedIndex());
                 System.out.println("dipartimento "+comboBoxYear[3].getSelectedIndex());
-
+            	 */
+            	
 
                 if(comboBoxYear[2].getSelectedIndex()==1){
                     String tipoY = null;
@@ -418,6 +522,9 @@ public class SeatInGui extends JFrame {
                     } catch (NotBoundException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
+					} catch (MessagingException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
 					}
 
                 }else if(comboBoxYear[2].getSelectedIndex()==2){
@@ -435,7 +542,7 @@ public class SeatInGui extends JFrame {
                         }else{
                             JOptionPane.showMessageDialog(SeatInGui.this, "Non Inserito");
                         }
-                    } catch (HeadlessException | NotBoundException | IOException e1) {
+                    } catch (HeadlessException | NotBoundException | IOException | MessagingException e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
@@ -455,7 +562,7 @@ public class SeatInGui extends JFrame {
                         }else{
                             JOptionPane.showMessageDialog(SeatInGui.this, "Non Inserito");
                         }
-                    } catch (HeadlessException | NotBoundException | IOException e1) {
+                    } catch (HeadlessException | NotBoundException | IOException | MessagingException e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
@@ -549,7 +656,6 @@ public class SeatInGui extends JFrame {
         return submit;
     }
 
-
     /** Pannello Password Dimemnticata**/
 
     public void passwordForgotten(){
@@ -593,7 +699,7 @@ public class SeatInGui extends JFrame {
                 try {
                     user.setEmail(email.getText());
                     user.updatePassword();
-                } catch (RemoteException e2) {
+                } catch (RemoteException | MessagingException e2) {
                     // TODO Auto-generated catch block
                     e2.printStackTrace();
                 }
@@ -643,15 +749,26 @@ public class SeatInGui extends JFrame {
                 setSize(600,400);
             }
         });
-        JMenuItem m1b = new JMenuItem("Modifica Paswword");
+        JMenuItem m1b = new JMenuItem("Modifica Password");
         m1b.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showConfirmDialog(panelAfterLogin, "Vuoi modificare la password");
+                int reply=JOptionPane.showConfirmDialog(panelAfterLogin, "Vuoi modificare la password?");
+                if (reply == JOptionPane.YES_OPTION) {
+                   mainContainer.add(changePassword(student));
+                }
+
             }
         });
         JMenuItem m1c = new JMenuItem("Richiedi modfica dei dati personali");
-        /** invia mail all'admin**/
+        /* invia richiesta all'admin */
+        m1c.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.add(profileRequest(student));
+            }
+        });
+
 
         JMenuItem m1d = new JMenuItem("Logout");
         m1d.addActionListener(new ActionListener() {
@@ -659,7 +776,7 @@ public class SeatInGui extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 //
                 try {
-
+                    student.logout();
                     welcometoSeatIn();
                 } catch (RemoteException | NotBoundException e1) {
                     // TODO Auto-generated catch block
@@ -709,6 +826,7 @@ public class SeatInGui extends JFrame {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
+                
                 viewProfile().setVisible(false);
                 setSize(600,400);
 
@@ -871,12 +989,27 @@ public class SeatInGui extends JFrame {
         JMenu m3 = new JMenu("Email");
 
         JMenuItem m1a = new JMenuItem("Visualizza profilo ");
+        m1a.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	teacher.add(BorderLayout.CENTER, viewProfileTeacher());
+                try {
+					EmailSenderStudent().setVisible(false);
+				} catch (RemoteException | SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+                setSize(600,400);
+            }
+        });
         JMenuItem m1b = new JMenuItem("Richiesta Modifica Profilo");
         JMenuItem m1c = new JMenuItem("Logout");
         m1c.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+                    //faccio logout per salvare nella tabella database
+
                     welcometoSeatIn();
                 } catch (RemoteException | NotBoundException e1) {
                     // TODO Auto-generated catch block
@@ -892,7 +1025,12 @@ public class SeatInGui extends JFrame {
         m3a.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                teacher.add(EmailSender(),BorderLayout.CENTER);
+                try {
+					teacher.add(EmailSenderTeacher(),BorderLayout.CENTER);
+				} catch (RemoteException | SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 
             }
         });
@@ -918,10 +1056,11 @@ public class SeatInGui extends JFrame {
     }
 
 
-    /** pannello email**/
-    public JPanel EmailSender(){
-
-        //   SeatInTeacher teacher = new SeatInTeacher();
+    /** pannello email
+     * @throws SQLException 
+     * @throws RemoteException **/
+    public JPanel EmailSenderTeacher() throws RemoteException, SQLException{
+   //   SeatInTeacher teacher = new SeatInTeacher();
 
         JPanel emailp = new JPanel();
         emailp.setLayout(new FlowLayout());//new GridLayout(5,1));
@@ -930,13 +1069,19 @@ public class SeatInGui extends JFrame {
         /** Cose da fare:
          *
          *  1)Caricare i dati dei corsi in un vettore di Stringhe
+         * 
 
          */
 
 
 
-        List<String> courseList = new ArrayList<String>();
-
+        List<String> courses= new ArrayList<String>();
+        courses=teacher.getCoursesTeached(teacher.getEmail());
+        final List<String> course = courses;
+        
+        List<String> studentemail= new ArrayList<String>();
+        courses=teacher.getCoursesTeached(teacher.getEmail());
+        final List<String> studentEmail = studentemail;
         String[] nomeCorso = new String[0];
     /*
             ----chiamarareun altro metodo---
@@ -953,9 +1098,31 @@ public class SeatInGui extends JFrame {
         */
 
 
-        JComboBox course = new JComboBox(nomeCorso);
-        JTextField email = new JTextField(10);
-        email.setText(mail);
+        JComboBox courseList = new JComboBox(nomeCorso);
+        JComboBox emailStudent = new JComboBox();
+        courseList.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                for (int i = 0; i < course.size(); i++) {
+                    if (course.get(i).equals(courseList.getSelectedItem())){
+                    	String courseName= "Anatomina";
+                    	String y="2016";
+                    	int year=Integer.parseInt(y);
+                    	
+                    	try {
+							studentEmail.add(teacher.getStudentsEmailforNewsletter(courseName, year).toString());//codcorso,//anno
+						} catch (RemoteException | SQLException e2) {
+							// TODO Auto-generated catch block
+							e2.printStackTrace();
+						}
+							emailStudent.addItem(studentEmail);
+                    }
+                }
+            }
+        });
+        JTextField emailTo = new JTextField(40);
+        emailTo.setText("seleziona destinatari o inserisci manualmente email");
+        JTextField pasw = new JTextField();
         JTextArea body = new JTextArea(10,40);
         JButton send  = new JButton("Invia Email");
         send.addActionListener(new ActionListener() {
@@ -964,21 +1131,62 @@ public class SeatInGui extends JFrame {
                 String bodyemail = body.getText();
 
                 /** richiamare metodo email**/
+                try {
+					teacher.sendEmail(teacher.getEmail(), emailTo.getText(), teacher.getPassword(), "oggetto", body.getText());
+				} catch (RemoteException | MessagingException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+                JOptionPane.showMessageDialog(emailp,bodyemail);
 
+            }
+        });
+        JButton sendAll  = new JButton("Invia a tutti");
+        send.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String bodyemail = body.getText();
+
+                /** richiamare metodo email**/
+                try {
+                	teacher.sendEmailForNewsletter(teacher.getEmail(), pasw.getText(), studentEmail, "oggetto", body.getText());
+					//teacher.sendEmail(teacher.getEmail(), emailTo.getText(), teacher.getPassword(), "oggetto", body.getText());
+				} catch (RemoteException | MessagingException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
                 JOptionPane.showMessageDialog(emailp,bodyemail);
 
             }
         });
 
-        emailp.add(new JLabel("Email Docente", (int) CENTER_ALIGNMENT));
-        emailp.add(email);
+        emailp.add(new JLabel("email destinatario"));
+        emailp.add(emailTo);
+        emailp.add(new JLabel("Password email"));
+        emailp.add(pasw);
         emailp.add( new JLabel("Seleziona Corso", (int) CENTER_ALIGNMENT));
-        emailp.add(course);
+        emailp.add(courseList);
+        emailp.add( new JLabel("Seleziona Studente", (int) CENTER_ALIGNMENT));
+        emailp.add(emailStudent);
+        emailStudent.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	 for (int i = 0; i < studentEmail.size(); i++) {
+                     if (studentEmail.get(i).equals(emailStudent.getSelectedItem())){
+                     	
+                     	emailTo.setText(studentEmail.get(i).toString());
+                   
+                     }
+                 }
+            }
+        });
         emailp.add(new JLabel(""));
         emailp.add(body);
         emailp.add(new JLabel(""));
 
         emailp.add(send);
+        emailp.add(new JLabel(""));
+        emailp.add(sendAll);
         emailp.add(new JLabel(""));
 
 
@@ -989,24 +1197,19 @@ public class SeatInGui extends JFrame {
     }
     public JPanel EmailSenderStudent() throws RemoteException, SQLException{
 
-
-
         JPanel emailp = new JPanel();
         emailp.setLayout(new FlowLayout());
 
-        JTextField email = new JTextField();
+        JTextField emailTo = new JTextField();
         JTextField pasw = new JTextField();
 
 
-
-
-
-        List<String> courses = new ArrayList<String>();
-        
-       courses=student.showCourseForaStudyPlan(email.getText());
-       final List<String> course= courses;
-
-        List<String[]> teacheremail = new ArrayList<String[]>();
+        List<String[]> courses = new ArrayList<String[]>();
+        courses = student.showCourseForaStudyPlan(emailTo.getText());
+        final List<String[]> course = courses;
+    
+        List<String> teacheremail = new ArrayList<String>();
+        final List<String> teacherEmail = teacheremail;
         //teacheremail.addAll(teacher.teacherEmailForStudentEmailSender());
         JComboBox teacherlist;
 
@@ -1017,40 +1220,58 @@ public class SeatInGui extends JFrame {
         courseList.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                for(int i=0; i<course.size();i++){
-                    if(course.get(i).equals(courseList.getSelectedItem()))
-
-                        emailTeacher.addItem(teacher.teacherEmailForStudentEmailSender());//codcorso,//anno
+                for (int i = 0; i < course.size(); i++) {
+                    if (course.get(i).equals(courseList.getSelectedItem())){
+                    	String courseName= "Anatomina";
+                    	String y="2016";
+                    	int year=Integer.parseInt(y);
+                    	teacherEmail.add(student.teacherTeachesCourse(courseName, year).toString());//codcorso,//anno
+                    	emailTeacher.addItem(teacherEmail); 
+                  
+                    }
                 }
             }
         });
 
-        JTextArea body = new JTextArea(10,40);
-        JButton send  = new JButton("Invia Email");
+        JTextArea body = new JTextArea(10, 40);
+        JButton send = new JButton("Invia Email");
         send.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String bodyemail = body.getText();
-                String teacherSelect = (String) courseList.getSelectedItem();
-                String adminrSelect = (String) emailTeacher.getSelectedItem();
-
-
+                String teacherSelect =(String) emailTeacher.getSelectedItem();
+                try {
+					student.sendEmail(student.getEmail(), emailTo.getText(), pasw.getText(), "oggetto", body.getText());
+				} catch (RemoteException | MessagingException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
                 /** richiamare metodo email**/
 
-                JOptionPane.showMessageDialog(emailp,teacherSelect);
+                JOptionPane.showMessageDialog(emailp, teacherSelect);
 
             }
         });
 
-        emailp.add(new JLabel("email"));
-        emailp.add(email);
-        emailp.add(new JLabel("password"));
+        emailp.add(new JLabel("email destinatario"));
+        emailp.add(new JLabel("Password email"));
         emailp.add(pasw);
 
-        emailp.add( new JLabel("Seleziona Corso", (int) CENTER_ALIGNMENT));
+        emailp.add(new JLabel("Seleziona Corso", (int) CENTER_ALIGNMENT));
         emailp.add(courseList);
-        emailp.add( new JLabel("Seleziona Docente", (int) CENTER_ALIGNMENT));
+        emailp.add(new JLabel("Seleziona Docente", (int) CENTER_ALIGNMENT));
         emailp.add(emailTeacher);
+        emailTeacher.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	 for (int i = 0; i < teacherEmail.size(); i++) {
+                     if (teacherEmail.get(i).equals(emailTeacher.getSelectedItem())){
+                    	 emailTo.setText(teacherEmail.get(i).toString());
+                   
+                     }
+                 }
+            }
+        });
 
         emailp.add(new JLabel(""));
         emailp.add(body);
@@ -1060,8 +1281,7 @@ public class SeatInGui extends JFrame {
         emailp.add(new JLabel(""));
 
 
-
-        setSize(600,400);
+        setSize(600, 400);
         setVisible(true);
         return emailp;
     }
@@ -1074,13 +1294,12 @@ public class SeatInGui extends JFrame {
         JPanel insertinfo = new JPanel();
         insertinfo.setLayout(new GridLayout(4,2));
 
-
-        JTextField emailadmin = new JTextField(10);
-        emailadmin.setText(mail);
-        emailadmin.setEditable(false);
+        JTextField emailTo = new JTextField(30);
+        emailTo.setText("inserisce email del destinatario");
+        //emailadmin.setEditable(false);
         JPasswordField paswd = new JPasswordField(10);
 
-        JTextField emailDest = new JTextField(10);
+       // JTextField emailDest = new JTextField(10);
         JTextField object =new JTextField(10);
 
         JTextArea body = new JTextArea(10,40);
@@ -1089,11 +1308,16 @@ public class SeatInGui extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String bodyemail = body.getText();
-                String emailAdmin = emailadmin.getText();
-                String emailto = emailDest.getText();
-                String passoword = paswd.getText();
+             //   String emailAdmin = emailadmin.getText();
+            //    String emailto = emailDest.getText();
+             //   String password = paswd.getText();
                 String obj = object.getText();
-
+                try {
+					administrator.sendEmail(administrator.getEmail(), emailTo.getText() , paswd.getText(), obj, bodyemail);
+				} catch (RemoteException | MessagingException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
                 /** richiamare metodo email**/
 
          //       admin.sendEmail (emailAdmin,emailto,passoword, obj, bodyemail);
@@ -1104,12 +1328,11 @@ public class SeatInGui extends JFrame {
 
         emailp.add(insertinfo);
 
-        insertinfo.add(emailadmin);
+        insertinfo.add(emailTo);
         insertinfo.add(new JLabel(""));
-        insertinfo.add(new JLabel("Password Account"));
+        insertinfo.add(new JLabel("Password email"));
         insertinfo.add(paswd);
-        insertinfo.add(new JLabel("Email destinatario"));
-        insertinfo.add(emailDest);
+       // insertinfo.add(new JLabel("Email destinatario"));
         insertinfo.add(new JLabel("Oggeto Email"));
         insertinfo.add(object);
 
@@ -1200,6 +1423,39 @@ public class SeatInGui extends JFrame {
 
         return corsi;
     }
+    public JPanel changePassword(SeatInPeople person) {
+        final JPanel changePassword=new JPanel();
+        changePassword.setLayout(new GridLayout(3,2));
+        JTextField password=new JTextField();
+        JTextField repeatPassword=new JTextField();
+        JLabel insertPassword=new JLabel("inserisci password: ");
+        JLabel insertPasswordtwice=new JLabel("re-inserisci password: ");
+        JButton ok=new JButton("conferma");
+        ok.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (password.getText().equals(repeatPassword.getText()) && !password.getText().equals("")){
+                    try {
+                        person.setPassword(password.getText());
+                        boolean flag=person.updatePassword();
+                        if (flag)
+                            JOptionPane.showMessageDialog(changePassword,"password modificata correttamente!");
+                    } catch (RemoteException | MessagingException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
+        changePassword.add(insertPassword);
+        changePassword.add(password);
+        changePassword.add(insertPasswordtwice);
+        changePassword.add(repeatPassword);
+        changePassword.add(new JLabel(""));
+        changePassword.add(ok);
+        setVisible(true);
+        setSize(600,400);
+    return changePassword;
+    }
     public JPanel adminPanel(){
         final JPanel admin = new JPanel();
         admin.setLayout(new BorderLayout());
@@ -1210,8 +1466,22 @@ public class SeatInGui extends JFrame {
         JMenu m1 = new JMenu("Utenti");
         JMenu m2 = new JMenu("Corsi");
         JMenu m3 = new JMenu("Opzioni");
+       
 
         JMenuItem m1i = new JMenuItem("Visualizza profilo Utente");
+        m1i.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	admin.add(BorderLayout.CENTER, viewProfileAdmin());
+                try {
+					EmailSenderStudent().setVisible(false);
+				} catch (RemoteException | SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+                setSize(600,400);
+            }
+        });
 
         JMenuItem m3i = new JMenuItem("Abilita Corsi");
         m3i.addActionListener(new ActionListener() {
@@ -1227,6 +1497,7 @@ public class SeatInGui extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+                    administrator.logout();
                     welcometoSeatIn();
                 } catch (RemoteException | NotBoundException e1) {
                     // TODO Auto-generated catch block
@@ -1341,14 +1612,326 @@ public class SeatInGui extends JFrame {
     	setSize(600,400);
     	return tree;
         }
-    	
-    	
-    	
-    	
-    	
-    	
+
+ public JPanel profileRequest(SeatInPeople person) {
+        String type="";
+            final String[] field = {""};
+        JComboBox change;
+
+        if (person instanceof SeatInStudent)
+            type="studente";
+        if (person instanceof SeatInAdmin)
+                type="amministratore";
+        if (person instanceof SeatInTeacher)
+                type="docente";
+            final String t=type;
+            final String[] fieldRequest = {""};
+            JLabel text=new JLabel("SPECIFICARE IL CAMPO CHE SI DESIDERA MODIFICARE:");
+            JPanel profileReq=new JPanel();
+            profileReq.setLayout(new GridLayout(3,2));
+            profileReq.add(text);
+            profileReq.add(new JLabel(""));
+            if (type.equals("studente"))
+            {
+                String [] student = {"-------", "nome", "cognome", "email" , "matricola", "anno immatricolazione", "corso di laurea", "stato corso di laurea", "anno corso"};
+                change = new JComboBox(student);
+                profileReq.add(change);
+            }
+           else
+            {String[] teacherAdmin = {"-------------","nome", "cognome", "email", "matricola","dipartimento"};
+                change = new JComboBox(teacherAdmin);
+
+                profileReq.add(change);
+
+            }
+
+            change.addItemListener(new ItemListener() {
+                @Override
+                public void itemStateChanged(ItemEvent e) {
+                    if (e.getStateChange() == ItemEvent.SELECTED){
+                        field[0]=change.getSelectedItem().toString();
+                    }
+
+                }
+            });
+
+            JTextField textChange= new JTextField();
+            profileReq.add(textChange);
+            JButton ok= new JButton("richiedi modifica");
+            ok.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                 int response=   JOptionPane.showConfirmDialog(profileReq, "ATTENZIONE! la richiesta verra' visionata ed eventualmente approvata da un amministratore. continuare?");
+                 if (response==JOptionPane.YES_OPTION)
+                 {
+                     try {
+                         person.changeProfileRequest(person.getEmail(), field[0],textChange.getText(), t);
+                     } catch (RemoteException e1) {
+                         e1.printStackTrace();
+                     }
+                 }
+                }
+            });
+            profileReq.add(ok);
+            setSize(600,400);
+            setVisible(true);
+            return profileReq;
+        }
+
+ public JPanel viewProfileAdmin(){
+          JPanel profileInformation = new JPanel();
+          profileInformation.setLayout(new GridLayout(6, 2));
+          JLabel personalData[] = {new JLabel("nome"), new JLabel("cognome"), new JLabel("matricola"), new JLabel("email"), new JLabel("Dipartimento"), new JLabel("Stato Profilo")};
+          JTextField personalDataTextField[] = {new JTextField("nome"), new JTextField("cognome"), new JTextField("matricola"),
+                  new JTextField("email"), new JTextField("Dipartimento"), new JTextField("tipologia")};
+  
+          personalDataTextField[0].setText(administrator.getName());
+          personalDataTextField[1].setText(administrator.getSurname());
+          personalDataTextField[2].setText(administrator.getID());
+          personalDataTextField[3].setText(administrator.getEmail());
+          personalDataTextField[4].setText(administrator.getDepartment());
+          personalDataTextField[5].setText(administrator.getStateProfile());
+  
+          for (int i = 0; i < 6; i++) {
+              profileInformation.add(personalData[i]);
+              profileInformation.add(personalDataTextField[i]);
+              personalDataTextField[i].setEditable(false);
+          }
+  
+  
+          setVisible(true);
+          return profileInformation;
+      }
+ public JPanel viewProfileTeacher(){
+     JPanel profileInformation = new JPanel();
+     profileInformation.setLayout(new GridLayout(6, 2));
+     JLabel personalData[] = {new JLabel("nome"), new JLabel("cognome"), new JLabel("matricola"), new JLabel("email"), new JLabel("Dipartimento"), new JLabel("Stato Profilo")};
+     JTextField personalDataTextField[] = {new JTextField("nome"), new JTextField("cognome"), new JTextField("matricola"),
+             new JTextField("email"), new JTextField("cdl"), new JTextField("Dipartimento"), new JTextField("tipologia")};
+
+     personalDataTextField[0].setText(teacher.getName());
+     personalDataTextField[1].setText(teacher.getSurname());
+     personalDataTextField[2].setText(teacher.getID());
+     personalDataTextField[3].setText(teacher.getEmail());
+     personalDataTextField[4].setText(teacher.getDepartment());
+     personalDataTextField[5].setText(teacher.getStateProfile());
+
+     for (int i = 0; i < 6; i++) {
+         profileInformation.add(personalData[i]);
+         profileInformation.add(personalDataTextField[i]);
+         personalDataTextField[i].setEditable(false);
+     }
 
 
+     setVisible(true);
+     return profileInformation;
+ }
+ public JPanel userBlocked(){
+   JPanel userblock = new JPanel();
+   userblock.setLayout(new FlowLayout());
+   String[] users = {"Scegli il tipo di utente","Studente", "Docente", "Admin"};
+   JComboBox type = new JComboBox(users);
+   userblock.add(type);
+ 
+   JButton back = new JButton("Esci");
+   back.addActionListener(new ActionListener() {
+       @Override
+       public void actionPerformed(ActionEvent e) {
+           try {
+               welcometoSeatIn();
+           } catch (RemoteException e1) {
+               e1.printStackTrace();
+           } catch (NotBoundException e1) {
+               e1.printStackTrace();
+           }
+           userblock.setVisible(false);
+
+       }
+   });
+   JTextField email = new JTextField(15);
+ //  JPasswordField psw = new JPasswordField(15);
+   JButton send = new JButton("Invia");
+   send.addActionListener(new ActionListener() {
+       @Override
+       public void actionPerformed(ActionEvent e) {
+    	  String  utenza1=(String) type.getSelectedItem();
+    	   switch (utenza1){
+           case "Studente":
+        	   student= new SeatInStudent(null, null, null, null, null, null, null, 0, 0, null, null);
+        	   try {
+				student.connection();
+			} catch (RemoteException | NotBoundException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+        	   try {
+				if(student.sendSblockRequest( email.getText(), "statoprofilo", "attivo","studente" )){
+					JOptionPane.showMessageDialog(userBlocked(),"richiesta inviata");
+				}else{
+					JOptionPane.showMessageDialog(userBlocked(),"richiesta non inviata");
+				}
+			} catch (RemoteException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+           case "Docente":
+        	   teacher = new SeatInTeacher(null, null, null, null, null, null, null,null);
+        	   try {
+				teacher.connection();
+			} catch (RemoteException | NotBoundException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+        	  
+        		   try {
+       				if(teacher.sendSblockRequest( email.getText(), "statoprofilo", "attivo","studente" )){
+       					JOptionPane.showMessageDialog(userBlocked(),"richiesta inviata");
+       				}else{
+       					JOptionPane.showMessageDialog(userBlocked(),"richiesta non inviata");
+       				}
+					} catch (RemoteException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+        	  
+      
+           case "Admin":
+        	   administrator = new SeatInAdmin(null, null, null, null, null, null, null,null);
+        	   try {
+				administrator.connection();
+			} catch (RemoteException | NotBoundException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+        	   try {
+      				if(administrator.sendSblockRequest( email.getText(), "statoprofilo", "attivo","studente" )){
+      					JOptionPane.showMessageDialog(userBlocked(),"richiesta inviata");
+      				}else{
+      					JOptionPane.showMessageDialog(userBlocked(),"richiesta non inviata");
+      				}
+					} catch (RemoteException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					} 
+           
+  		 }
+           
+
+       }
+   });
+   userblock.add(new JLabel("Inserisci email"));
+   userblock.add(email);
+   userblock.add(new JLabel("Inserisci password"));
+ //  userblock.add(psw);
+   userblock.add(send);
+   userblock.add(back);
+
+   setVisible(true);
+   Container container = getContentPane();
+   container.add(userblock);
+   return userblock;
+}
+
+ public  JPanel activationUser(){
+   JPanel activeUser = new JPanel();
+   activeUser.setLayout(new FlowLayout());
+
+   JTextField codAtt = new JTextField(10);
+   JTextField paswd = new JTextField(10);
+   JButton back = new JButton("Esci");
+   back.addActionListener(new ActionListener() {
+       @Override
+       public void actionPerformed(ActionEvent e) {
+
+           try {
+               welcometoSeatIn();
+           } catch (RemoteException e1) {
+               e1.printStackTrace();
+           } catch (NotBoundException e1) {
+               e1.printStackTrace();
+           }
+
+
+           activeUser.setVisible(false);
+
+       }
+   });
+   JButton send = new JButton("Invia");
+   send.addActionListener(new ActionListener() {
+       @Override
+       public void actionPerformed(ActionEvent e) {
+    	   String tempID = codAtt.getText();
+	       String password = paswd.getText();
+    	   if (password.length()>=MLPSW && tempID.length()!=8 ){
+	         
+	          switch (utenza){
+	          case "Studente":
+	        	  if(student.checkID(tempID)){
+	           	   try {
+	   				student.updatePasswordandProfile(password);
+	   			} catch (IOException | MessagingException e1) {
+	   				// TODO Auto-generated catch block
+	   				e1.printStackTrace();
+	   			}
+	           	   JOptionPane.showMessageDialog(activationUser(),"password cambiata");
+	              }else{
+	           	   JOptionPane.showMessageDialog(activationUser(),"ID temporaneo non corretto");
+	              }
+	       	  
+	          case "Docente":
+	        	  if(teacher.checkID(tempID)){
+	              	   try {
+	      				teacher.updatePasswordandProfile(password);
+	      			} catch (IOException | MessagingException e1) {
+	      				// TODO Auto-generated catch block
+	      				e1.printStackTrace();
+	      			}
+	              	   JOptionPane.showMessageDialog(activationUser(),"password cambiata");
+	                 }else{
+	              	   JOptionPane.showMessageDialog(activationUser(),"ID temporaneo non corretto");
+	                 }
+	       	  
+	     
+	          case "Admin":
+	        	  if(administrator.checkID(tempID)){
+	              	   try {
+	      				administrator.updatePasswordandProfile(password);
+	      			} catch (IOException | MessagingException e1) {
+	      				// TODO Auto-generated catch block
+	      				e1.printStackTrace();
+	      			}
+	              	   JOptionPane.showMessageDialog(activationUser(),"password cambiata");
+	                 }else{
+	              	   JOptionPane.showMessageDialog(activationUser(),"ID temporaneo non corretto");
+	                 }
+	          }
+ 		 }else{
+ 			JOptionPane.showMessageDialog(activationUser(), "Password o Codice non inseriti correttamente");
+ 		 }
+    	   
+           
+
+       }
+   });
+
+   activeUser.add(new JLabel("Inserisci codice attivazione"), CENTER_ALIGNMENT);
+   activeUser.add(codAtt);
+
+   activeUser.add(new JLabel("Inserisci password"), CENTER_ALIGNMENT);
+   activeUser.add(paswd);
+
+   activeUser.add(send);
+   activeUser.add(back);
+
+   Container container = getContentPane();
+   container.add(activeUser);
+
+
+
+   setVisible(true);
+   return activeUser;
+}
+    	
 
     public static void main(String[] args) throws RemoteException, NotBoundException, SQLException {
         SeatInGui sIn = new SeatInGui();
@@ -1359,3 +1942,4 @@ public class SeatInGui extends JFrame {
     }
 
 }
+
