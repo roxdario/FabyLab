@@ -13,10 +13,7 @@ import java.util.List;
 
 import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
 
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
-
-public class SeatInStudent extends SeatInUser  implements Serializable, Observable, RmiObservableService {
+public class SeatInStudent extends SeatInUser  implements Serializable {
 	static final String user="S";
 	private static final long serialVersionUID = 1;
 
@@ -273,21 +270,6 @@ public class SeatInStudent extends SeatInUser  implements Serializable, Observab
 			temp[1]=String.valueOf(profile.getCourseYear());
 		}
 		return temp;
-	}
-	@Override
-	public void addListener(InvalidationListener listener) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void removeListener(InvalidationListener listener) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void addObserver(RemoteObserver o) throws RemoteException {
-		// TODO Auto-generated method stub
-		
 	}
 
 }
