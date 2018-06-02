@@ -78,8 +78,5 @@ public interface SeatInServerInterface extends Remote {
 	public String whichUser(String email) throws RemoteException, SQLException;
     public List<String[]> allCourse() throws RemoteException, SQLException; 
     public List<String[]> getInfoCoursesTeached(String email) throws SQLException,RemoteException ;
-    public List<String[]> courseNotInStudyPlanTeacher(String email) throws SQLException, RemoteException ;
-
-
 
 }
