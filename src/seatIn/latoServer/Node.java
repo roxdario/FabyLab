@@ -85,7 +85,7 @@ public class Node implements Serializable{
     }
 
     public String getVisibility() {
-        return this.code;
+        return this.visibility;
     }
 
     public String getFile() {
@@ -111,47 +111,55 @@ public class Node implements Serializable{
     public static void printTree(Node root) {
         System.out.println("root: " + root.getName() + root.getDescription());
         //figli di primo livello + sottosezioni + file
+        int i=0;
         List<Node> l = root.getChildren();
         for (Node n : l) {
-            System.out.println("  sezione: " + n.getName());
+            i++;
+                 if (n.getVisibility().equals("pubblica"))
+                     System.out.println("  sezione: " + n.getName());
             if (n.getChildren().size() != 0) {
                 //potrebbe avere file, cartelle o sottosezioni!
                 List<Node> list = n.getChildren();
                 for (Node nodo : list) {
                     if (nodo.getFile().equals("false"))
                     //e' una cartella senza sottosezioni!
-                    {
+                    {   i++;
                         System.out.println("     cartel:" + nodo.getName() );
                         List<Node> nodeFile = nodo.getChildren();
                         //print di tutti i file
                         for (Node files : nodeFile) {
                             System.out.println("      file:" + files.getName());
+                            i++;
                         }
                     } if (nodo.getFile().equals("true"))
                         //e' un file senza sottosezioni, che ovviamente non puo' avere figli!!
                     {
                         //print di tutti i file
                             System.out.println("      file:" + nodo.getName());
+                            i++;
                     }
                     else
                     //significa che e' una sottosezione
                     {
                         System.out.println("    subsection: " + nodo.getName());
+                        i++;
                         List<Node> nodes = nodo.getChildren();
                         for (Node nodoo : nodes) {
                             if (nodoo.getFile().equals("false"))
                             //e' una cartella senza sottosezioni!
-                            {
+                            {   i++;
                                 System.out.println("         cartel:" + nodoo.getName());
                                 List<Node> nodeFil = nodoo.getChildren();
                                 //print di tutti i file
                                 for (Node files : nodeFil) {
+                                    i++;
                                     System.out.println("            file:" + files.getName());
                                 }
                             }
                             if (nodoo.getFile().equals("true"))
                             //e' un file senza cartella!
                             {
+                                i++;
                                 //print di tutti i file
                                     System.out.println("         file:" + nodoo.getName());
                                 }
@@ -162,6 +170,7 @@ public class Node implements Serializable{
 
                 }
             }
+            System.out.println(i);
 
         }
         public List<String> findNode(String code){
@@ -184,6 +193,75 @@ public class Node implements Serializable{
             }
         }
         return lic;
+        }
+
+        public int treeLength() {
+
+            //figli di primo livello + sottosezioni + file
+            int i = 0;
+            List<Node> l = this.getChildren();
+            for (Node n : l) {
+                i++;
+                System.out.println("  sezione: " + n.getName());
+                if (n.getChildren().size() != 0) {
+                    //potrebbe avere file, cartelle o sottosezioni!
+                    List<Node> list = n.getChildren();
+                    for (Node nodo : list) {
+                        if (nodo.getFile().equals("false"))
+                        //e' una cartella senza sottosezioni!
+                        {
+                            i++;
+                            System.out.println("     cartel:" + nodo.getName());
+                            List<Node> nodeFile = nodo.getChildren();
+                            //print di tutti i file
+                            for (Node files : nodeFile) {
+                                System.out.println("      file:" + files.getName());
+                                i++;
+                            }
+                        }
+                        if (nodo.getFile().equals("true"))
+                        //e' un file senza sottosezioni, che ovviamente non puo' avere figli!!
+                        {
+                            //print di tutti i file
+                            System.out.println("      file:" + nodo.getName());
+                            i++;
+                        } else
+                        //significa che e' una sottosezione
+                        {
+                            System.out.println("    subsection: " + nodo.getName());
+                            i++;
+                            List<Node> nodes = nodo.getChildren();
+                            for (Node nodoo : nodes) {
+                                if (nodoo.getFile().equals("false"))
+                                //e' una cartella senza sottosezioni!
+                                {
+                                    i++;
+                                    System.out.println("         cartel:" + nodoo.getName());
+                                    List<Node> nodeFil = nodoo.getChildren();
+                                    //print di tutti i file
+                                    for (Node files : nodeFil) {
+                                        i++;
+                                        System.out.println("            file:" + files.getName());
+                                    }
+                                }
+                                if (nodoo.getFile().equals("true"))
+                                //e' un file senza cartella!
+                                {
+                                    i++;
+                                    //print di tutti i file
+                                    System.out.println("         file:" + nodoo.getName());
+                                }
+                            }
+
+                        }
+                    }
+
+                }
+            }
+            System.out.println(i);
+
+
+            return i;
         }
 
     }

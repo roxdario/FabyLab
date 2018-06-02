@@ -8,6 +8,8 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.List;
 
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
+
 public class SeatInUser extends SeatInPeople implements Serializable{
 	private static final long serialVersionUID = 1;
 	private String ID;
@@ -17,19 +19,24 @@ public class SeatInUser extends SeatInPeople implements Serializable{
 	private String password;
 	private String IDTemp;
 	private String stateProfile;
-	
-	public SeatInUser(String iD, String name, String surname, String email,
-			String password, String iDTemp, String stateProfile) {
-		  super(iD, name, surname, email, password, iDTemp, stateProfile);
-		ID = iD;
+
+	//public SeatInTeacher(String iD, String name, String surname, String email,
+	//			String password, String iDTemp, String stateProfile,
+	//			String department) {
+	//		super(iD, name, surname, email, password, iDTemp, stateProfile);
+	public SeatInUser(String iD, String name, String surname, String email, String password, String IDTemp, String stateProfile) {
+		super(iD, name, surname, email, password, IDTemp, stateProfile);
+
+		this.ID = iD;
 		this.name = name;
 		this.surname = surname;
 		this.email = email;
 		this.password = password;
-		IDTemp = iDTemp;
+		this.IDTemp = IDTemp;
 		this.stateProfile = stateProfile;
+
+
 	}
-	
 	@Override
 	public String login() throws RemoteException {
 		return super.login();
@@ -152,8 +159,9 @@ public class SeatInUser extends SeatInPeople implements Serializable{
 		super.setStateProfile(stateProfile);
 	}
 
-	public List<String[]> viewAllCourseInformation() throws RemoteException {
-		return stub.viewAllCourseInformation();
+	
+	public String isClass() {
+		return "SeatInUser";
 	}
 
 

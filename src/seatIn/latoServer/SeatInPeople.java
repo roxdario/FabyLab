@@ -8,6 +8,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
@@ -28,21 +29,20 @@ public abstract class  SeatInPeople implements Serializable {
 
 	public SeatInPeople(){
 	}
-	public SeatInPeople(String iD, String name, String surname, String email,
-			String password, String iDTemp, String stateProfile) {
-		super();
-		ID = iD;
-		this.name = name;
-		this.surname = surname;
-		this.email = email;
-		this.password = password;
-		IDTemp = iDTemp;
-		this.stateProfile = stateProfile;
-	}
-
+    public SeatInPeople(String iD, String name, String surname, String email, String password, String iDTemp,
+                        String stateProfile) {
+        super();
+        this.ID = iD;
+        this.name = name;
+        this.surname = surname;
+        this.email = email;
+        this.password = password;
+        this.IDTemp = iDTemp;
+        this.stateProfile = stateProfile;
+    }
 
     public  void connection() throws  RemoteException, NotBoundException{
-        String host="192.168.1.10";
+        String host="192.168.1.9";
         int port=2099;
         Registry reg=LocateRegistry.getRegistry(host, port);
         stub=(SeatInServerInterface)reg.lookup("classeRemota");
@@ -55,18 +55,17 @@ public abstract class  SeatInPeople implements Serializable {
     	System.out.println("psw:"+this.password);
     	Object serverUser=stub.login(this);
     	System.out.println(serverUser);
-	
-		 switch (serverUser.toString()) {
-         case "utente bloccato":
-             return "utente bloccato";
-         case "utente inesistente":
-             return "utente inesistente";
-         case "password errata":
-             return "password errata";
-         case "not found":
-        	 return "not found";
-         default:
- 			return "errore";
+    	switch (serverUser.toString()) {
+        case "utente bloccato":
+            return "utente bloccato";
+        case "utente inesistente":
+            return "utente inesistente";
+        case "password errata":
+            return "password errata";
+        case "not found":
+       	 return "not found";
+        default:
+			return "errore";
 		 }
      }
 	public void setInformation(SeatInPeople s) {
@@ -95,9 +94,9 @@ public abstract class  SeatInPeople implements Serializable {
 	}
     public boolean checkID(String id){
     	if(this.IDTemp.equals(id)){
-    		return false;
-    	}else{
     		return true;
+    	}else{
+    		return false;
     	}
     }
     public void updatePasswordandProfile(String password) throws IOException, MessagingException {
@@ -107,67 +106,6 @@ public abstract class  SeatInPeople implements Serializable {
     	stub.updateProfileState(this);
 	}
 	
-
-    public String getStateProfile() {
-        return stateProfile;
-    }
-
-    public void setID(String ID) {
-        this.ID = ID;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setSurname(String surname) {
-        this.surname = surname;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setIDTemp(String IDTemp) {
-        this.IDTemp = IDTemp;
-    }
-    protected void setStateProfile(String stateProfile) {
-  		this.stateProfile=stateProfile;
-  		
-  	}
-
-    public String getID() {
-
-        return ID;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getSurname() {
-        return surname;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getIDTemp() {
-        return IDTemp;
-    }
-   
-
-	public void viewProfile() {}
-	public  void sendEmail() {}
 
 	public void getPerson(SeatInPeople serverUser) {
 		this.setID(serverUser.getID());
@@ -192,13 +130,15 @@ public abstract class  SeatInPeople implements Serializable {
 	public void changeProfileRequest(String email, String fieldToChange, String newParameter, String tipology) throws RemoteException {
 		stub.changeProfileRequest(email, fieldToChange, newParameter, tipology);
 	}
-	public boolean sendSblockRequest(String email, String fieldToChange, String newParameter, String tipology) throws RemoteException {
-		 if(stub.changeProfileRequest(email, fieldToChange, newParameter, tipology)){
-			 return true;
-		 }else{
-			 return false;
-		 }
-		 
+	public boolean sendSblockRequest() throws RemoteException {
+		this.setStateProfile("non attivo");
+    	stub.updateProfileState(this);
+    	if(stub.resetPasswordRequest(this)){
+    		return true;
+    	}else{
+    		return false;
+    	}
+		
 	}
 	
 	public List<String[]> teacherTeachesCourse (String code, int year)  {
@@ -218,13 +158,122 @@ public abstract class  SeatInPeople implements Serializable {
 	public boolean sendEmailForNewsletter(String user, String password, List<String> toList, String subject, String body) throws RemoteException, MessagingException{
 		return stub.sendEmailForNewsletter(user, password, toList, subject, body);
 	}
-	public boolean sendEmail (String from, String to, String password, String object, String body) throws RemoteException, MessagingException{
-		return stub.sendEmail(from, to, password, object, body);
+	public boolean sendEmail (String to, String password, String object, String body) throws RemoteException, MessagingException{
+		return stub.sendEmail(this.getEmail(), to, password, object, body);
 		
 	}
+	public byte[] getFile( String fileCode, String courseCode, int courseYear) throws IOException, SQLException, RemoteException{
+	    return  stub.getFile(fileCode, this.getEmail() , courseYear,  courseCode);
+
+    }
+    public ArrayList<String> findFolder(String code) throws SQLException, RemoteException {
+	    return stub.findInFolder(code);
+    }
+
+    public  String findFileName(String code) throws SQLException, RemoteException {
+	    return stub.findFileName(code);
+    }
+    public List<String[]> viewAllCourseInformation() throws RemoteException {
+		return stub.viewAllCourseInformation();
+	}
+    public List<String[]> showCourseForStudyPlan() throws RemoteException, SQLException {
+		return stub.showCourseFromStudyPlan(this.getEmail());
+	}
+
+    public Object profileInfo() throws RemoteException, SQLException {
+	    return stub.profileInformation(this);
+
+    }
+	public boolean sendSblockRequest(String email, String fieldToChange, String newParameter, String tipology) throws RemoteException {
+		 if(stub.changeProfileRequest(email, fieldToChange, newParameter, tipology)){
+			 return true;
+		 }else{
+			 return false;
+		 }
+		 
+	}
+	public Node createCourseTree(String code, int year) throws SQLException, RemoteException {
+		return stub.createCourseTree(code,year);
+	}
+	public List<String[]> allCourse() throws RemoteException, SQLException {
+		return stub.allCourse();
+	}
+
+    public abstract String isClass();
+ 
+    public void setID(String ID) {
+        this.ID = ID;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setSurname(String surname) {
+        this.surname = surname;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    public void setIDTemp(String IDTemp) {
+        this.IDTemp = IDTemp;
+    }
+    public void setStateProfile(String stateProfile) {
+  		this.stateProfile=stateProfile;
+  		
+  	}
+
+    public String getID() {
+
+        return ID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getSurname() {
+        return surname;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+    public String getIDTemp() {
+        return IDTemp;
+    }
+    public String getStateProfile() {
+        return stateProfile;
+    }
 	
-	
-	
+  
+
+	public void courseSubscription(List<String> teacherEmail,String courseYear, String courseCode) throws MessagingException, RemoteException {
+		stub.courseSubscription(this.getEmail(),courseCode,Integer.parseInt(courseYear),teacherEmail);
+	}
+
+	public void registerUserIsConsultingCourse( String code, int courseYear, String profile) throws RemoteException {
+	stub.registerUserIsConsultingCourse(this.getEmail(),code,courseYear,profile);}
+
+	public void registerUserLogoutFromCourse( String code, int courseYear) throws RemoteException{
+	stub.registerUserLogoutFromCourse(this.getEmail(),code,courseYear);
+	}
+	public List<String[]> getInfoCoursesTeached()throws RemoteException, SQLException{
+		return stub.getInfoCoursesTeached(this.getEmail());
+	}
+    public List<String[]> courseNotInStudyPlanTeacher() throws SQLException, RemoteException {
+    	return stub.courseNotInStudyPlanTeacher(this.getEmail());
+    }
+
 
 }
 
