@@ -42,7 +42,7 @@ public abstract class  SeatInPeople implements Serializable {
     }
 
     public  void connection() throws  RemoteException, NotBoundException{
-        String host="192.168.1.9";
+        String host="192.168.1.79";
         int port=2099;
         Registry reg=LocateRegistry.getRegistry(host, port);
         stub=(SeatInServerInterface)reg.lookup("classeRemota");
@@ -270,10 +270,7 @@ public abstract class  SeatInPeople implements Serializable {
 	public List<String[]> getInfoCoursesTeached()throws RemoteException, SQLException{
 		return stub.getInfoCoursesTeached(this.getEmail());
 	}
-    public List<String[]> courseNotInStudyPlanTeacher() throws SQLException, RemoteException {
-    	return stub.courseNotInStudyPlanTeacher(this.getEmail());
-    }
-
+	
 
 }
 
