@@ -10,6 +10,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -200,6 +201,30 @@ public class SeatInAdmin extends SeatInPeople {
 		 stub.insertPersonByAdmin(l);
 	}
 
-	
+	public int getUserConnected() throws RemoteException {
+		return stub.getUserConnected();
+	}
+	public int userActiveInACourse(String code, int year) throws SQLException, RemoteException {
+		return stub.statisticsUserActiveInACourse(year,code);
+	}
+	public Object timeStatisticsForAllCourses() throws SQLException, RemoteException{
+		return stub.timeStatisticsForAllCourses();
+	}
+	public int totalAccessInACoursePage(String courseCode, int courseYear, Timestamp t1, Timestamp t2) throws SQLException, RemoteException {
+		return stub.totalAccessInACoursePage(courseCode,courseYear,t1,t2);
+	}
+	public int showResourceDownloadFromCourse(String courseCode, int courseYear) throws SQLException, RemoteException {
+		return stub.showResourceDownloadFromCourse(courseCode,courseYear);
+	}
+	//public int totalAccessInACoursePage(String courseCode, int courseYear, Timestamp t1, Timestamp t2)
+	//tempo medio di connessione degli studenti per ogni corso
+	public Object timeStatisticsForCourse(String courseCode, int courseYear) throws SQLException, RemoteException{
+		return stub.timeStatisticsForCourse(courseCode,courseYear);
+
+	}
+	public int showUserDownloadedInTime(Timestamp timeStart, Timestamp timeStop) throws RemoteException{
+		return stub.showUserDownloadedInTime(timeStart,timeStop);
+	}
+
 
 }
