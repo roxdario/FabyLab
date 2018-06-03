@@ -25,22 +25,20 @@ public class SeatInTeacher extends SeatInUser {
 	private String IDTemp;
 	private String stateProfile;
 	private String department;
-	
-	
 
-	public SeatInTeacher(String iD, String name, String surname, String email,
-			String password, String iDTemp, String stateProfile,
-			String department) {
-		super(iD, name, surname, email, password, iDTemp, stateProfile);
-		ID = iD;
+	public SeatInTeacher(String iD, String name, String surname, String email, String password, String IDTemp, String state, String department) {
+		super(iD, name, surname, email, password, IDTemp, state);
+		this.department = department;
+		this.ID = iD;
 		this.name = name;
 		this.surname = surname;
 		this.email = email;
 		this.password = password;
-		IDTemp = iDTemp;
-		this.stateProfile = stateProfile;
-		this.department = department;
+		this.IDTemp = IDTemp;
+		this.stateProfile = state;
+
 	}
+
 
 
 	@Override
@@ -49,25 +47,11 @@ public class SeatInTeacher extends SeatInUser {
 		return super.getID();
 	}
 
-
-
-
-
-
-
-
 	@Override
 	public void setID(String iD) {
 		// TODO Auto-generated method stub
 		super.setID(iD);
 	}
-
-
-
-
-
-
-
 
 	@Override
 	public String getName() {
@@ -75,25 +59,11 @@ public class SeatInTeacher extends SeatInUser {
 		return super.getName();
 	}
 
-
-
-
-
-
-
-
 	@Override
 	public void setName(String name) {
 		// TODO Auto-generated method stub
 		super.setName(name);
 	}
-
-
-
-
-
-
-
 
 	@Override
 	public String getSurname() {
@@ -101,25 +71,11 @@ public class SeatInTeacher extends SeatInUser {
 		return super.getSurname();
 	}
 
-
-
-
-
-
-
-
 	@Override
 	public void setSurname(String surname) {
 		// TODO Auto-generated method stub
 		super.setSurname(surname);
 	}
-
-
-
-
-
-
-
 
 	@Override
 	public String getEmail() {
@@ -127,25 +83,11 @@ public class SeatInTeacher extends SeatInUser {
 		return super.getEmail();
 	}
 
-
-
-
-
-
-
-
 	@Override
 	public void setEmail(String email) {
 		// TODO Auto-generated method stub
 		super.setEmail(email);
 	}
-
-
-
-
-
-
-
 
 	@Override
 	public String getPassword() {
@@ -153,25 +95,11 @@ public class SeatInTeacher extends SeatInUser {
 		return super.getPassword();
 	}
 
-
-
-
-
-
-
-
 	@Override
 	public void setPassword(String password) {
 		// TODO Auto-generated method stub
 		super.setPassword(password);
 	}
-
-
-
-
-
-
-
 
 	@Override
 	public String getIDTemp() {
@@ -179,38 +107,17 @@ public class SeatInTeacher extends SeatInUser {
 		return super.getIDTemp();
 	}
 
-
-
-
-
-
-
-
 	@Override
 	public void setIDTemp(String iDTemp) {
 		// TODO Auto-generated method stub
 		super.setIDTemp(iDTemp);
 	}
 
-
-
-
-
-
-
-
 	@Override
 	public String getStateProfile() {
 		// TODO Auto-generated method stub
 		return super.getStateProfile();
 	}
-
-
-
-
-
-
-
 
 	@Override
 	public void setStateProfile(String stateProfile) {
@@ -225,13 +132,6 @@ public class SeatInTeacher extends SeatInUser {
 	        return department;
 	    }
 
-
-
-
-
-
-
-
 	@Override
 	public String login() throws RemoteException {
 		System.out.println("email:"+this.email);
@@ -240,12 +140,14 @@ public class SeatInTeacher extends SeatInUser {
     	System.out.println(serverUser);
 	
 		 switch (serverUser.toString()) {
-         case "utente bloccato":
-             return "utente bloccato";
+		 case "utente bloccato":
+             return "bloccato";
          case "utente inesistente":
              return "utente inesistente";
          case "password errata":
              return "password errata";
+         case "not found":
+        	 return "not found";
          default:
         	 SeatInTeacher User= (SeatInTeacher) serverUser;
         	 this.setInformation(User);
@@ -258,8 +160,6 @@ public class SeatInTeacher extends SeatInUser {
 		this.setIDTemp(serverUser.getIDTemp());
 		this.setName(serverUser.getName());
 		this.setSurname(serverUser.getSurname());
-	//	this.setEmail(serverUser.getEmail());
-	//	this.setPassword(serverUser.getPassword());
 		this.setStateProfile(serverUser.getStateProfile());
 		this.setDepartment(serverUser.getDepartment());	
 	}
@@ -297,15 +197,16 @@ public class SeatInTeacher extends SeatInUser {
 		return stub.teacherEmailForStudentEmailSender(courseCode, courseYear);
 	}
 
-
-	public List<String> getCoursesTeached(String text) throws RemoteException, SQLException {
-		return stub.getCoursesTeached(text);
+	public List<String> getCoursesTeached() throws RemoteException, SQLException {
+		return stub.getCoursesTeached(this.getEmail());
 	}
 	public List<String>getStudentsEmailforNewsletter(String courseName, int year) throws RemoteException, SQLException{
 		return stub.getStudentsEmailforNewsletter( courseName, year);
 	}
-	
-	
+
+	public String isClass() {
+		return "SeatInTeacher";
+	}
 	
 
 }
