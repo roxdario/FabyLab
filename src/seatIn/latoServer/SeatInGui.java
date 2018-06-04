@@ -10,11 +10,13 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.regex.Pattern;
 import javax.swing.*;
@@ -178,6 +180,7 @@ public class SeatInGui extends JFrame {
                     if(loginCheck(email.getText(),passwordField.getText())){
                         if(utenza.equals("Studente")){
     	                    student= new SeatInStudent(null, null, null, null, null, null, null, 0, 0, null, null);
+                        	
     	                    student.setEmail(email.getText());
     	                    student.setPassword(passwordField.getText());
     	                    try {
@@ -506,7 +509,8 @@ public class SeatInGui extends JFrame {
 	                        }else if(comboBoxYear[1].getSelectedIndex()==2){
 	                            tipoY="inCorso";
 	                        }
-	                        student= new SeatInStudent(null, null, null, null, null, null, null, 0, 0, null, null);
+	                      //  student= new SeatInStudent(null, null, null, null, null, null, null, 0, 0, null, null);
+	                       // student.getInstance();
 	                        student.setID(registerInformation[2].getText());
 	                        student.setName(registerInformation[0].getText());
 	                        student.setSurname(registerInformation[1].getText());
@@ -1206,31 +1210,64 @@ public class SeatInGui extends JFrame {
     }
 
     /** Pannelo Teacher **/
-    public JPanel teacherPanel(){
-        JPanel teacherP = new JPanel();
-        teacherP.setLayout(new BorderLayout());
+    public JPanel teacherPanel() {
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent windowEvent) {
+                if (JOptionPane.showConfirmDialog(mainContainer,
+                        "Sei sicuro di voler chiuedere questa finestra?", "Really Closing?",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+                    try {
+                        teacher.logout();
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.exit(0);
+                }
+            }
+        });
+        JPanel teacherp = new JPanel();
+        teacherp.setLayout(new BorderLayout());
+  
 
         JMenuBar mb  = new JMenuBar();
 
         JMenu m1 = new JMenu("Profilo");
         JMenu m2 = new JMenu("Corsi");
         JMenu m3 = new JMenu("Email");
-
+        JMenu statistics = new JMenu("Statistiche piattaforma");
+        JMenuItem platformStatistics = new JMenuItem("Visualizza statistiche piattaforma");
+        statistics.add(platformStatistics);
         JMenuItem m1a = new JMenuItem("Visualizza profilo ");
         m1a.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-            	teacherP.add(BorderLayout.CENTER, viewProfileTeacher());
-                try {
-					EmailSenderStudent().setVisible(false);
-				} catch (RemoteException | SQLException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+            	mainContainer.removeAll();
+            	mainContainer.repaint();
+            	mainContainer.validate();
+            	mainContainer.add(viewProfileTeacher());
+            	setVisible(true);
                 setSize(600,400);
             }
         });
         JMenuItem m1b = new JMenuItem("Richiesta Modifica Profilo");
+                m1b.addActionListener(new ActionListener() {
+        	            @Override
+        	            public void actionPerformed(ActionEvent e) {
+        	                //comprarira un pannello
+        	                // in cui il docente puo richiedere modifica del profilo. tale modifica verra' presa in considerazione
+        	                //da un amministratore
+        	                mainContainer.removeAll();
+        	                mainContainer.validate();
+        	                mainContainer.repaint();
+        	                mainContainer.add(profileRequest(teacher));
+        	                setVisible(true);
+        	
+        	            }
+        	        });
         JMenuItem m1c = new JMenuItem("Logout");
         m1c.addActionListener(new ActionListener() {
             @Override
@@ -1238,12 +1275,15 @@ public class SeatInGui extends JFrame {
                 try {
                     //faccio logout per salvare nella tabella database
 
-                    welcometoSeatIn();
+                	mainContainer.removeAll();
+ 	                mainContainer.validate();
+ 	                mainContainer.repaint();
+ 	                welcometoSeatIn();
+ 	                
                 } catch (RemoteException | NotBoundException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
-                teacherP.setVisible(false);
             }
         });
 
@@ -1269,8 +1309,12 @@ public class SeatInGui extends JFrame {
         m3a.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                	teacherP.add(EmailSenderTeacher(),BorderLayout.CENTER);
+                try {  mainContainer.removeAll();
+                mainContainer.validate();
+                mainContainer.repaint();
+                mainContainer.add(EmailSenderTeacher());
+                setSize(600,400);
+                setVisible(true);
 				} catch (RemoteException | SQLException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -1278,7 +1322,7 @@ public class SeatInGui extends JFrame {
 
             }
         });
-        JMenuItem m2b = new JMenuItem("Visualizza corsi in cui insegno");
+        JMenuItem m2b = new JMenuItem("Visualizza i corsi in cui insegno");
         m2b.addActionListener(new ActionListener() {
                  @Override
                  public void actionPerformed(ActionEvent e) {
@@ -1324,27 +1368,61 @@ public class SeatInGui extends JFrame {
 
                  }
              });
+        JMenuItem m1d = new JMenuItem("Modifica password");
+        m1d.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int reply=JOptionPane.showConfirmDialog(teacherPanel(), "Vuoi modificare la password?");
+                if (reply == JOptionPane.YES_OPTION) {
+                    mainContainer.removeAll();
+                    mainContainer.validate();
+                    mainContainer.repaint();
+                    mainContainer.add(changePassword(teacher));
+                    setVisible(true);
+                }
+
+            }
+        });
+        
 
         mb.add(m1);
         mb.add(m2);
         mb.add(m3);
-
+        mb.add(statistics);
         m1.add(m1a);
+        m1.add(m1d);
         m1.add(m1b);
         m1.add(m1c);
-
+       
+        
         m2.add(m2a);
         m2.add(m2b);
         m2.add(m2c);
 
         m3.add(m3a);
+        platformStatistics.addActionListener(new ActionListener() {
+        	            @Override
+        	            public void actionPerformed(ActionEvent e) {
+        	                mainContainer.removeAll();
+        	                mainContainer.validate();
+        	                mainContainer.repaint();
+        	
+        	                try {
+        	                    mainContainer.add(statisticTeacher());
+        	                } catch (RemoteException e1) {
+        	                    e1.printStackTrace();
+        	                } catch (SQLException e1) {
+                            e1.printStackTrace();
+        	                }
+        	                setVisible(true);
+        	            }
+                });
 
-
-        teacherP.add(mb,BorderLayout.NORTH);
+        teacherp.add(mb, BorderLayout.NORTH);
 
 
         setVisible(true);
-        return teacherP;
+        return teacherp;
     }
     public JPanel courseInStudyPlanTeacher() throws RemoteException, SQLException, NotBoundException {
         class MyMouseHandler extends MouseAdapter {
@@ -1374,7 +1452,7 @@ public class SeatInGui extends JFrame {
                 mainContainer.repaint();
                 JPanel treepanel = null;
                 try {
-                    treepanel = viewTreeTeacher(tree);
+                    treepanel = viewTree(tree,"t","notEnabled");
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (NotBoundException e1) {
@@ -1384,7 +1462,7 @@ public class SeatInGui extends JFrame {
                 setVisible(true);
             }
         }
-        teacher.connection();
+      
         //ottengo i corsi per cui l'utente e' gia' iscritto
         List<String[]> courseInStudyPlan =   teacher.showCourseForStudyPlan();
         JPanel showCourses = new JPanel();
@@ -1411,13 +1489,14 @@ public class SeatInGui extends JFrame {
                 mainContainer.repaint();
                 mainContainer.validate();
                 mainContainer.add(teacherPanel());
+                setVisible(true);
             }
         });
-        setVisible(true);
-        mainContainer.add(showCourses);
+        
         return showCourses;
     }
     public JPanel mineCourseTeacher() throws RemoteException, SQLException, NotBoundException {
+
         class MyMouseHandler extends MouseAdapter {
         	@Override
             public void mouseClicked(MouseEvent evt) {
@@ -1445,7 +1524,7 @@ public class SeatInGui extends JFrame {
                 mainContainer.repaint();
                 JPanel treepanel = null;
                 try {
-                    treepanel = viewTreeMineCourseTeacher(tree);
+                    treepanel = viewTree(tree,"t","enabled");
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (NotBoundException e1) {
@@ -1483,23 +1562,182 @@ public class SeatInGui extends JFrame {
                 mainContainer.repaint();
                 mainContainer.validate();
                 mainContainer.add(teacherPanel()); 
+                setVisible(true);
             }
         });
         setVisible(true);
         mainContainer.add(showCourses);
         return showCourses;
     }
+    public JPanel addOptionalCourseTeacher(SeatInTeacher t) throws SQLException, RemoteException{
+        JPanel addCoursePanel = new JPanel();
+        addCoursePanel.setLayout(new FlowLayout());
+        //tutti i corsi di laurea disponibili senza contare quello a cui è gia' iscritto lo studente
+        List<String[]> degreeAvailable = t.courseNotInStudyPlanTeacher();
+        String[] degreeCourse = new String[degreeAvailable.size()];
+        int i = 0;
+        JButton signUp = new JButton("Iscriviti");
+
+
+        //in questo modo ottengo tutti i corsi di laurea registrati sulla piattaforma che sono differenti da quello dell'utente
+        //degree[0]contiene nome
+        //degree[1] contiene codice
+        for (String[] degreeAv : degreeAvailable) {
+            degreeCourse[i] = degreeAv[0];
+            i++;
+        }
+
+
+        //significa che non ci sono corsiDiLaurea disponibili a parte quello per cui gia' appartiene l'utente
+       // if (degreeCourse.length == 1)
+         //   JOptionPane.showMessageDialog(addCoursePanel, "ATTENZIONE: nessun corso di laurea disponibile");
+
+
+        JTextArea areatext = new JTextArea(10, 15);
+        //prima combo box
+        JComboBox course = new JComboBox(degreeCourse);
+
+        JComboBox optionalCourse = new JComboBox();
+        optionalCourse.removeAllItems();
+        course.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                    optionalCourse.removeAllItems();
+                    if (course.getSelectedIndex()==0)
+                        areatext.removeAll();
+                    List<String[]> coursesbyDegree = new ArrayList<>();
+                    for (String[] degreeAv : degreeAvailable)
+                        if (course.getSelectedItem().equals(degreeAv[0])) {
+
+                            try {
+                                coursesbyDegree = t.courseNotInStudyPlanTeacher();
+                                System.out.println("courses by degree" + coursesbyDegree.size());
+                                for (String[] x : coursesbyDegree) {
+                                    optionalCourse.addItem("codice corso:" + x[0] + ".Anno accademico:" + x[2]);
+                                }
+                            } catch (SQLException e1) {
+                                e1.printStackTrace();
+                            } catch (RemoteException e1) {
+                                e1.printStackTrace();
+                            }
+
+                        }
+
+                    final List<String[]> courseBYdegree=coursesbyDegree;
+                    optionalCourse.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            if (optionalCourse.getSelectedIndex() != -1) {
+                                System.out.println(course.getSelectedIndex());
+                                String x = optionalCourse.getSelectedItem().toString();
+                                x = x.replaceAll("codice corso:", "");
+                                x = x.replaceAll("Anno accademico:", "");
+                                String[] y = x.split(Pattern.quote("."));
+                                for (String[] info : courseBYdegree) {
+                                    if (y[0].equals(info[0]) && y[1].equals(info[2])) {
+                                        List<String[]> teachers = t.teacherTeachesCourse(info[0], Integer.parseInt(info[2]));
+                                        areatext.setText("nome corso:" + info[1] + "\n" +
+                                                "descrizione:" + info[3] + "\n" + "docenti del corso:");
+                                        System.out.println("codice" + info[0] +
+                                                "nome " + info[1] + "anno" + info[2] + "descrizione" + info[3]);
+                                        for (String[] teacher : teachers)
+                                            areatext.append(teacher[0] + " " + teacher[1]);
+                                    } else
+                                        System.out.println("non ho trovato ");
+                                }
+
+
+                            }
+
+                        }
+
+
+                    });
+            }
+        });
+
+
+
+        signUp.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                String x = optionalCourse.getSelectedItem().toString();
+                x = x.replaceAll("codice corso:", "");
+                x = x.replaceAll("Anno accademico:", "");
+                String[] y = x.split(Pattern.quote("."));
+                //y[0] codice
+                // y1 anno
+                List<String> teacherEmail=new ArrayList<>();
+                try {
+                    teacherEmail=t.teacherEmailForStudentEmailSender(y[0],Integer.parseInt(y[1]));
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                } catch (RemoteException e1) {
+                    e1.printStackTrace();
+                }
+                try {
+                    t.courseSubscription(teacherEmail, y[1],y[0]);
+                } catch (MessagingException e1) {
+                    e1.printStackTrace();
+                } catch (RemoteException e1) {
+                    e1.printStackTrace();
+                }
+
+
+                int reply=JOptionPane.showConfirmDialog(addCoursePanel, "stai tentando di iscriverti al corso selezionato. Continuare?");
+                if (reply == JOptionPane.YES_OPTION) {
+                    mainContainer.removeAll();
+                    mainContainer.validate();
+                    mainContainer.repaint();
+               
+                        mainContainer.add(teacherPanel());
+                
+                    setVisible(true);
+                }
+
+            }
+        });
+
+        JButton back = new JButton("Annulla");
+        back.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // welcometoSeatIn();
+                addCoursePanel.removeAll();
+                addCoursePanel.validate();
+                addCoursePanel.repaint();
+                
+                	teacherPanel();
+               
+            }
+        });
+        addCoursePanel.add(course);
+        addCoursePanel.add(optionalCourse);
+        addCoursePanel.add(signUp);
+        addCoursePanel.add(back);
+        addCoursePanel.add(areatext);
+
+
+        Container container = getContentPane();
+        container.add(addCoursePanel);
+        setVisible(true);
+        setSize(600, 400);
+        return addCoursePanel;
+    }
+
     /** pannello email
      * @throws SQLException 
      * @throws RemoteException **/
     public JPanel EmailSenderTeacher() throws RemoteException, SQLException{
+    	  JComboBox objectComboBox= new JComboBox();
      	 JPanel emailp = new JPanel();
         emailp.setLayout(new FlowLayout());
         JTextField email = new JTextField(teacher.getEmail());
         //JPasswordField pasw = new JPasswordField();
         JLabel subject = new JLabel("inserisci oggetto della email");
        ///creazione lista corsi tenuti da docente
-        List<String[]> courses = teacher.getCoursesTeached();
+        List<String[]> courses = teacher.getInfoCoursesTeached();
         String vector[] = new String[courses.size() + 1];
         int i = 1;
         vector[0] = "------------------";
@@ -1522,9 +1760,26 @@ public class SeatInGui extends JFrame {
                 {
                     try {
                         if (courseList.getSelectedIndex() != 0) {
+                            String [] x=courseList.getSelectedItem().toString().split("annoAccademico");
+                            //x0 contiene nome
+                            //x1 contiene anno
+                            x[1].replaceAll("\\s","");
+                            x[0].replaceAll("\\s","");
+                            String code="";
+                            for (String[] c: course)
+                            {
+                                System.out.print(x[0]+ "and" +c[0] + "   "+ x[1]+ "and" + c[2]);
+                                if (x[0].equals(c[0]) && x[1].equals(c[2]))
+                                    code=c[1];
+                            }
+                            
                        	 List<String> emailStudentForSend = teacher.getStudentsEmailforNewsletter(course.get(courseList.getSelectedIndex() - 1)[1],
                        			 Integer.parseInt((course.get(courseList.getSelectedIndex() - 1)[2])));
                             emailStudent.addItem("--------");
+                            Node node=teacher.createCourseTree(code, Integer.parseInt(x[1]));
+                            List<Node> nodeList =node.getChildren();
+                            for (Node n: nodeList)
+                                objectComboBox.addItem(n.getName());
                             int i = 0;
                             for (String m : emailStudentForSend) {
                                 emailStudent.addItem(m);
@@ -1593,7 +1848,7 @@ public class SeatInGui extends JFrame {
             j++;
         }
         final List<String[]> courseMine = coursesMine;
-        JComboBox courseListMine = new JComboBox(vector);
+        JComboBox courseListMine = new JComboBox(vectorMine);
         JComboBox emailTeacherTo = new JComboBox();
         
         courseListMine.addActionListener(new ActionListener() {
@@ -1602,7 +1857,7 @@ public class SeatInGui extends JFrame {
                 {
                     try {
                         if (courseListMine.getSelectedIndex() != 0) {
-
+                        	
                             List<String> emailTeacherForSend = (teacher.teacherEmailForStudentEmailSender(courseMine.get(courseListMine.getSelectedIndex() - 1)[1], Integer.parseInt((courseMine.get(courseListMine.getSelectedIndex() - 1)[2]))));//codcorso,//anno
                             emailTeacherTo.addItem("--------");
                             int i = 0;
@@ -1675,25 +1930,43 @@ public class SeatInGui extends JFrame {
         emailp.add(new JLabel("email"));
         emailp.add(email);
         JPanel panelAlignment =new JPanel();
-        panelAlignment.setLayout(new GridLayout(2,2));
+        panelAlignment.setLayout(new GridLayout(5,2));
 
        panelAlignment.add(new JLabel("Seleziona Corso che insegno", (int) CENTER_ALIGNMENT));
-       panelAlignment.add(new JLabel("Seleziona Studente", (int) CENTER_ALIGNMENT));
        panelAlignment.add(courseList);
+       panelAlignment.add(new JLabel("Seleziona Studente", (int) CENTER_ALIGNMENT));
        panelAlignment.add(emailStudent);
        panelAlignment.add(new JLabel("Seleziona Corso che seguo", (int) CENTER_ALIGNMENT));
-       panelAlignment.add(new JLabel("Seleziona Docente", (int) CENTER_ALIGNMENT));
        panelAlignment.add(courseListMine);
+       panelAlignment.add(new JLabel("Seleziona Docente", (int) CENTER_ALIGNMENT));
        panelAlignment.add(emailTeacherTo);
+       panelAlignment.add(new JLabel("Oggetto: ",(int) CENTER_ALIGNMENT));
+       panelAlignment.add(objectComboBox);
+       
        
        emailp.add(panelAlignment);
 
         emailp.add(body);
+       
+        
         //emailp.add() aggiungere oggetto
 
         emailp.add(send);
         emailp.add(sendAll);
-
+        JButton back=new JButton("indietro");
+        emailp.add(new JLabel(""));
+        emailp.add(back);
+        back.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.removeAll();
+                mainContainer.repaint();
+                mainContainer.validate();
+                mainContainer.add(teacherPanel());
+                setVisible(true);
+            }
+        });
+        
 
         setSize(600, 400);
         setVisible(true);
@@ -1820,17 +2093,37 @@ public class SeatInGui extends JFrame {
         panelAlignment.add(courseList);
 
         panelAlignment.add(emailTeacher);
-        panelAlignment.add(new JLabel("oggetto: "));
-
-        panelAlignment.add(objectComboBox);
+        
+      
 
         emailp.add(panelAlignment);
          emailp.add(body);
+         panelAlignment.add(new JLabel("oggetto: "));
+
+         panelAlignment.add(objectComboBox);
+       
          //emailp.add() aggiungere oggetto
 
          emailp.add(send);
-
-
+         JButton back=new JButton("indietro");
+         emailp.add(new JLabel(""));
+         emailp.add(back);
+         back.addActionListener(new ActionListener() {
+             @Override
+             public void actionPerformed(ActionEvent e) {
+                 mainContainer.removeAll();
+                 mainContainer.repaint();
+                 mainContainer.validate();
+                 try {
+					mainContainer.add(mainPanelAfterLoginStudent());
+				} catch (RemoteException | NotBoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+                 setVisible(true);
+             }
+         });
+         
          setSize(600, 400);
          setVisible(true);
          return emailp;
@@ -1843,7 +2136,7 @@ public class SeatInGui extends JFrame {
 
         JPanel insertinfo = new JPanel();
 
-        insertinfo.setLayout(new GridLayout(4,2));
+        insertinfo.setLayout(new GridLayout(6,2));
         JTextField administratorEmail= new JTextField(administrator.getEmail());
         administratorEmail.setEditable(false);
         insertinfo.add(new JLabel("da: "));
@@ -1886,6 +2179,19 @@ public class SeatInGui extends JFrame {
 
         emailp.add(body);
         emailp.add(send);
+        JButton back=new JButton("indietro");
+        emailp.add(new JLabel(""));
+        emailp.add(back);
+        back.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.removeAll();
+                mainContainer.repaint();
+                mainContainer.validate();
+                mainContainer.add(adminPanel());
+                setVisible(true);
+            }
+        });
 
         setSize(600,400);
         setVisible(true);
@@ -1990,7 +2296,17 @@ public class SeatInGui extends JFrame {
                             mainContainer.removeAll();
                             mainContainer.validate();
                             mainContainer.repaint();
-                            mainContainer.add(mainPanelAfterLoginStudent());
+                            if(utenza.equals("Studente")){
+                            	 mainContainer.add(mainPanelAfterLoginStudent());
+                            	 setVisible(true);
+                            }else if(utenza.equals("Docente")){
+                           	 	mainContainer.add(teacherPanel());
+                           	 	setVisible(true);
+                            }else if(utenza.equals("Admin")){
+                              	 mainContainer.add(adminPanel());
+                              	 setVisible(true);
+                            }
+                           
 
                         }
                     } catch (RemoteException | MessagingException e1) {
@@ -2014,6 +2330,25 @@ public class SeatInGui extends JFrame {
     return changePassword;
     }
     public JPanel adminPanel()  {
+
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent windowEvent) {
+                if (JOptionPane.showConfirmDialog(mainContainer,
+                        "Sei sicuro di voler chiuedere questa finestra?", "Really Closing?",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+                    try {
+                        administrator.logout();
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.exit(0);
+                }
+            }
+        });
         final JPanel admin = new JPanel();
         admin.setLayout(new BorderLayout());
 
@@ -2027,15 +2362,31 @@ public class SeatInGui extends JFrame {
         JMenuItem statistics= new JMenuItem("Visualizza statistiche");
         m4.add(statistics);
 
+        statistics.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.removeAll();
+                mainContainer.validate();
+                mainContainer.repaint();
+                try {
+                    mainContainer.add(statisticsAdmin());
+                } catch (RemoteException e1) {
+                    e1.printStackTrace();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+                setVisible(true);
+            }
+        });
 
         JMenuItem lockedProfile= new JMenuItem("Abilita profilo bloccato");
-             JMenuItem people= new JMenuItem("abilita utente");
+             JMenuItem people= new JMenuItem("Abilita utente");
         JMenuItem teacher= new JMenuItem("Associa ad un corso un insegnante");
-         JMenuItem changeProfileRequest =new JMenuItem("conferma una richiesta di modifica profilo");
+         JMenuItem changeProfileRequest =new JMenuItem("Conferma una richiesta di modifica profilo");
         mm.add(lockedProfile);
         mm.add(people);
         m2.add(teacher);
-        JMenuItem updateProfile= new JMenuItem("modifica profilo");
+        JMenuItem updateProfile= new JMenuItem("Modifica profilo");
         updateProfile.addActionListener(new ActionListener() {
                                             @Override
                                             public void actionPerformed(ActionEvent e) {
@@ -2208,12 +2559,28 @@ public class SeatInGui extends JFrame {
 
                  }
              });
+        JMenuItem m1d = new JMenuItem("Modifica password");
+        m1d.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int reply=JOptionPane.showConfirmDialog(teacherPanel(), "Vuoi modificare la password?");
+                if (reply == JOptionPane.YES_OPTION) {
+                    mainContainer.removeAll();
+                    mainContainer.validate();
+                    mainContainer.repaint();
+                    mainContainer.add(changePassword(administrator));
+                    setVisible(true);
+                }
+
+            }
+        });
         mb.add(m1);
         mb.add(m2);
         mb.add(mm);
         mb.add(m3);
         mb.add(m4);
         m1.add(m1i);
+        m1.add(m1d);
         m2.add(m3i);
         m2.add(m2a);
         m1.add(m4i);
@@ -2241,7 +2608,7 @@ public class SeatInGui extends JFrame {
         final String[] fieldRequest = {""};
         JLabel text = new JLabel("Quale dato si desidera modificare?:");
         JPanel profileReq = new JPanel();
-        profileReq.setLayout(new GridLayout(4, 1));
+        profileReq.setLayout(new GridLayout(5, 1));
         profileReq.add(text);
         if (type.equals("studente")) {
             String[] student = {"-------", "nome", "cognome", "email", "matricola", "anno immatricolazione", "corso di laurea", "stato corso di laurea", "anno corso"};
@@ -2297,6 +2664,35 @@ public class SeatInGui extends JFrame {
                 }
             }
         });
+        JButton back=new JButton("indietro");
+        profileReq.add(new JLabel(""));
+        profileReq.add(new JLabel(""));
+        profileReq.add(new JLabel(""));
+        profileReq.add(back);
+        back.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.removeAll();
+                mainContainer.repaint();
+                mainContainer.validate();
+                if (tipology.equals("studente")){
+                    try {
+						mainContainer.add(mainPanelAfterLoginStudent());
+					} catch (RemoteException | NotBoundException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+                    setVisible(true);}
+                    if (tipology.equals("docente")){
+                        mainContainer.add(teacherPanel());
+                    setVisible(true);}
+                    if (tipology.equals("amministratore")){
+                        mainContainer.add(adminPanel());
+                    setVisible(true);}
+                setVisible(true);
+            }
+        });
+        
         profileReq.add(ok);
         setSize(600, 400);
         setVisible(true);
@@ -2320,6 +2716,9 @@ public class SeatInGui extends JFrame {
                 Node tree = new Node("", "", "", "");
                 try {
                     tree = administrator.createCourseTree(code[0], Integer.parseInt(year[0].replaceAll("\\s", "")));
+                    //devo salvare il fatto che un admin sta visualizzando/interagendo con un corso
+                    administrator.registerUserIsConsultingCourse(code[0],Integer.parseInt(year[0].replaceAll("\\s", "")),"a");
+
                 } catch (SQLException e1) {
                     e1.printStackTrace();
                 } catch (RemoteException e1) {
@@ -2330,7 +2729,7 @@ public class SeatInGui extends JFrame {
                 mainContainer.repaint();
                 JPanel treepanel = null;
                 try {
-                    treepanel = viewTreeAdmin(tree);
+                    treepanel = viewTree(tree,"a","notEnabled");
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (NotBoundException e1) {
@@ -2404,7 +2803,7 @@ public class SeatInGui extends JFrame {
                 mainContainer.repaint();
                 JPanel treepanel = null;
                 try {
-                    treepanel = viewTree(tree);
+                    treepanel = viewTree(tree,"s","notEnabled");
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 } catch (NotBoundException e1) {
@@ -2454,13 +2853,37 @@ public class SeatInGui extends JFrame {
         mainContainer.add(showCourses);
         return showCourses;
     }
+  
 
-    public JPanel viewTree(Node node) throws IOException, NotBoundException {
-        student.registerUserIsConsultingCourse(node.getCode(),node.getYear(),"s");
-       System.out.print("user is having login ");
+    public JPanel viewTree(Node node, String profile, String way) throws IOException, NotBoundException {
+        JButton delete = new JButton("modifica/elimina");
+        JButton upload = new JButton("carica una risorsa");
+        if (profile.equals("s"))
+            student.registerUserIsConsultingCourse(node.getCode(), node.getYear(), "s");
+        if (profile.equals("a"))
+            administrator.registerUserIsConsultingCourse(node.getCode(), node.getYear(), "a");
+        if (profile.equals("t"))
+            teacher.registerUserIsConsultingCourse(node.getCode(), node.getYear(), "t");
+        if (profile.equals("t") && way.equals("enabled")) {
+            teacher.registerUserIsConsultingCourse(node.getCode(), node.getYear(), "t");
+
+            upload.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    mainContainer.removeAll();
+                    mainContainer.validate();
+                    mainContainer.repaint();
+                    mainContainer.add(uploadResource(node));
+                    upload.setVisible(true);
+                }
+            });
+            JButton b2 = new JButton("rimuovi una risorsa");
+        }
+        System.out.print("user is having login ");
+
         JPanel tree = new JPanel();
-        int i=node.treeLength();
-        tree.setLayout(new GridLayout(i,7));
+        int i = node.treeLength();
+        tree.setLayout(new GridLayout(i, 7));
         JTextField name = new JTextField();
         name.setText(node.getName());
         List<JLabel[]> labels = new ArrayList<>();
@@ -2478,6 +2901,7 @@ public class SeatInGui extends JFrame {
         p.add(new JLabel("SPECIFICARE DIRECTORY (usata per il download di file) : "));
         JTextField directory = new JTextField(30);
         p.add(directory);
+
         tree.add(p);
 
 
@@ -2503,7 +2927,14 @@ public class SeatInGui extends JFrame {
 
 
                                 try {
-                                    byte[] bytea = student.getFile(label[1].getText(), node.getCode(), node.getYear());
+                                    byte[] bytea = null;
+                                    if (profile.equals("s"))
+                                        bytea = student.getFile(label[1].getText(), node.getCode(), node.getYear());
+                                    if (profile.equals("a"))
+                                        bytea = administrator.getFile(label[1].getText(), node.getCode(), node.getYear());
+                                    if (profile.equals("t"))
+                                        bytea = teacher.getFile(label[1].getText(), node.getCode(), node.getYear());
+
                                     int response = JOptionPane.showConfirmDialog(tree, "Il file e' pronto per il download. Vuoi aggiungere un altro file?");
                                     if (response == JOptionPane.NO_OPTION) {
                                         if (codeToZip.size() == 0) {
@@ -2522,8 +2953,21 @@ public class SeatInGui extends JFrame {
                                             for (String l : codeToZip) {
                                                 String fileName = "";
                                                 try {
-                                                    fileName = student.findFileName(l);
-                                                    byte[] bytex = student.getFile(l, node.getCode(), node.getYear());
+
+                                                    byte[] bytex = null;
+                                                    if (profile.equals("s")) {
+                                                        bytex = student.getFile(l, node.getCode(), node.getYear());
+                                                        fileName = student.findFileName(l);
+                                                    }
+                                                    if (profile.equals("a")) {
+                                                        bytex = administrator.getFile(l, node.getCode(), node.getYear());
+                                                        fileName = administrator.findFileName(l);
+                                                    }
+
+                                                    if (profile.equals("t")) {
+                                                        bytex = teacher.getFile(l, node.getCode(), node.getYear());
+                                                        fileName = teacher.findFileName(l);
+                                                    }
                                                     Utility.createDirectory(directory.getText() + "/Archivio");
                                                     FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
                                                     fos.write(bytex);
@@ -2559,40 +3003,58 @@ public class SeatInGui extends JFrame {
                                     e.printStackTrace();
                                 }
                             } else
-                                    //è una cartella da zippare
-                                    {
-                                        //codice della cartella, da ricercare nel database
-                                        ArrayList<String> ls = new ArrayList<>();
-                                        try {
-                                            ls = student.findFolder(label[1].getText());
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
-                                        } catch (RemoteException e) {
-                                            e.printStackTrace();
+                            //è una cartella da zippare
+                            {
+                                //codice della cartella, da ricercare nel database
+                                ArrayList<String> ls = new ArrayList<>();
+                                try {
+                                    if (profile.equals("s"))
+                                        ls = student.findFolder(label[1].getText());
+                                    if (profile.equals("a"))
+                                        ls = administrator.findFolder(label[1].getText());
+                                    if (profile.equals("t"))
+                                        ls = teacher.findFolder(label[1].getText());
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                } catch (RemoteException e) {
+                                    e.printStackTrace();
+                                }
+                                ArrayList<String> pathFiles = new ArrayList<String>();
+                                for (String l : ls) {
+                                    String fileName = "";
+                                    try {
+                                        byte[] bytex = null;
+                                        if (profile.equals("s")) {
+                                            bytex = student.getFile(l, node.getCode(), node.getYear());
+                                            fileName = student.findFileName(l);
                                         }
-                                        ArrayList<String> pathFiles = new ArrayList<String>();
-                                        for (String l : ls) {
-                                            String fileName = "";
-                                            try {
-                                                fileName = student.findFileName(l);
-                                                byte[] bytex = student.getFile(l, node.getCode(), node.getYear());
-                                                Utility.createDirectory(directory.getText() + "/Archivio");
-                                                FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
-                                                fos.write(bytex);
-                                                pathFiles.add(directory.getText() + "/Archivio/" + fileName);
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
-                                            } catch (RemoteException e) {
-                                                e.printStackTrace();
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                            Utility.zip(pathFiles, directory.getText() + "/" + node.getName() + ".zip");
+                                        if (profile.equals("a")) {
+                                            bytex = administrator.getFile(l, node.getCode(), node.getYear());
+                                            fileName = administrator.findFileName(l);
+                                        }
 
+                                        if (profile.equals("t")) {
+                                            bytex = teacher.getFile(l, node.getCode(), node.getYear());
+                                            fileName = teacher.findFileName(l);
                                         }
-                                        //cancello tutti i file che avevo scritto su server
-                                        Utility.deleteDir(new File(directory.getText() + "/Archivio/"));
-                                        JOptionPane.showMessageDialog(tree,"cartella zippata!");
+
+                                        Utility.createDirectory(directory.getText() + "/Archivio");
+                                        FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
+                                        fos.write(bytex);
+                                        pathFiles.add(directory.getText() + "/Archivio/" + fileName);
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    } catch (RemoteException e) {
+                                        e.printStackTrace();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    Utility.zip(pathFiles, directory.getText() + "/" + node.getName() + ".zip");
+
+                                }
+                                //cancello tutti i file che avevo scritto su server
+                                Utility.deleteDir(new File(directory.getText() + "/Archivio/"));
+                                JOptionPane.showMessageDialog(tree, "cartella zippata!");
                             }
                         }
                     }
@@ -2600,10 +3062,10 @@ public class SeatInGui extends JFrame {
             }
         }
         MyMouseHandler handler = new MyMouseHandler();
-        JLabel l= new JLabel();
+        JLabel l = new JLabel();
         for (Node n : nodelist) {
             //aggiungo la sezione
-            if (n.getVisibility().equals("pubblica")) {
+            if (n.getVisibility().equals("pubblica") || way.equals("enabled")) {
                 tree.add(new JLabel(n.getName()));
                 //indentazione 0
                 //se la sezione ha figli
@@ -2611,8 +3073,8 @@ public class SeatInGui extends JFrame {
                     //potrebbe avere file, cartelle o sottosezioni!
                     List<Node> list = n.getChildren();
                     for (Node nodo : list) {
-                        if (nodo.getFile().equals("false") && nodo.getVisibility().equals("pubblica")){
-                        //e' una cartella senza sottosezioni!
+                        if (nodo.getFile().equals("false") && (nodo.getVisibility().equals("pubblica") || way.equals("enabled"))) {
+                            //e' una cartella senza sottosezioni!
                             {
                                 //indentazione 1
                                 tree.add(l);
@@ -2631,7 +3093,7 @@ public class SeatInGui extends JFrame {
 
                                 //print di tutti i file
                                 for (Node files : nodeFile) {
-                                    if (files.getVisibility().equals("pubblica")) {
+                                    if (files.getVisibility().equals("pubblica") || way.equals("enabled")) {
                                         //file dentro una cartella
                                         //indentazione 2
                                         for (int z = 0; z < 3; z++)
@@ -2651,7 +3113,7 @@ public class SeatInGui extends JFrame {
                             }
                             //se è privata non stampo ne la cartella ne i suoi file
                         }
-                        if (nodo.getFile().equals("true") && nodo.getVisibility().equals("pubblica"))
+                        if (nodo.getFile().equals("true") && (nodo.getVisibility().equals("pubblica") || way.equals("enabled")))
                         //e' un file senza sottosezioni, che ovviamente non puo' avere figli!!
                         {
                             //indentazione 1
@@ -2670,67 +3132,66 @@ public class SeatInGui extends JFrame {
                         } else
                         //significa che e' una sottosezione
                         {
-                            if (nodo.getVisibility().equals("pubblica")){
-                            //indentazione 1
-                            tree.add(l);
-                            label = new JLabel(nodo.getName());
-                            tree.add(label);
-                            List<Node> nodes = nodo.getChildren();
-                            for (Node nodoo : nodes) {
+                            if (nodo.getVisibility().equals("pubblica") || way.equals("enabled")) {
+                                //indentazione 1
+                                tree.add(l);
+                                label = new JLabel(nodo.getName());
+                                tree.add(label);
+                                List<Node> nodes = nodo.getChildren();
+                                for (Node nodoo : nodes) {
 
-                                if (nodoo.getFile().equals("false") && nodoo.getVisibility().equals("pubblica"))
+                                    if (nodoo.getFile().equals("false") && (nodoo.getVisibility().equals("pubblica") || way.equals("enabled")))
+                                    //e' una cartella
+                                    {
+                                        for (int a = 0; a < 4; a++)
+                                            tree.add(l);
+                                        label = new JLabel(nodoo.getName());
+                                        Font font = label.getFont();
+                                        Map attributes = font.getAttributes();
+                                        attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+                                        label.setFont(font.deriveFont(attributes));
+                                        JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
+                                        labels.add(tempr);
+                                        label.addMouseListener(handler);
+                                        tree.add(label);
+                                        List<Node> nodeFil = nodoo.getChildren();
+                                        //print di tutti i file
+                                        for (Node files : nodeFil) {
 
-                                //e' una cartella
-                                {
-                                    for (int a = 0; a < 4; a++)
-                                        tree.add(l);
-                                    label = new JLabel(nodoo.getName());
-                                    Font font = label.getFont();
-                                    Map attributes = font.getAttributes();
-                                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                    label.setFont(font.deriveFont(attributes));
-                                    JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
-                                    labels.add(tempr);
-                                    label.addMouseListener(handler);
-                                    tree.add(label);
-                                    List<Node> nodeFil = nodoo.getChildren();
-                                    //print di tutti i file
-                                    for (Node files : nodeFil) {
+                                            if (files.getVisibility().equals("pubblica")) {
+                                                //indentazione 5
+                                                for (int a = 0; a < 6; a++)
+                                                    tree.add(l);
 
-                                        if (files.getVisibility().equals("pubblica")) {
-                                            //indentazione 5
-                                            for (int a = 0; a < 6; a++)
-                                                tree.add(l);
-
-                                            label = new JLabel(files.getName());
-                                            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                            label.setFont(font.deriveFont(attributes));
-                                            tree.add(label);
-                                            JLabel[] tmpr = {label, new JLabel(files.getCode())};
-                                            labels.add(tmpr);
-                                            label.addMouseListener(handler);
+                                                label = new JLabel(files.getName());
+                                                attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+                                                label.setFont(font.deriveFont(attributes));
+                                                tree.add(label);
+                                                JLabel[] tmpr = {label, new JLabel(files.getCode())};
+                                                labels.add(tmpr);
+                                                label.addMouseListener(handler);
+                                            }
                                         }
-                                    }
 
+                                    }
+                                    if (nodoo.getFile().equals("true") && (nodoo.getVisibility().equals("pubblica") || way.equals("enabled")))
+                                    //e' un file senza cartella!
+                                    {
+                                        //indentazione 5
+                                        for (int a = 0; a < 5; a++)
+                                            tree.add(l);
+                                        //print di tutti i file
+                                        label = new JLabel(nodoo.getName());
+                                        Font font = label.getFont();
+                                        Map attributes = font.getAttributes();
+                                        attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+                                        label.setFont(font.deriveFont(attributes));
+                                        tree.add(label);
+                                        JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
+                                        labels.add(tempr);
+                                        label.addMouseListener(handler);
+                                    }
                                 }
-                                if (nodoo.getFile().equals("true") && nodoo.getVisibility().equals("pubblica"))
-                                //e' un file senza cartella!
-                                {
-                                    //indentazione 5
-                                    for (int a = 0; a < 5; a++)
-                                        tree.add(l);
-                                    //print di tutti i file
-                                    label = new JLabel(nodoo.getName());
-                                    Font font = label.getFont();
-                                    Map attributes = font.getAttributes();
-                                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                    label.setFont(font.deriveFont(attributes));
-                                    tree.add(label);
-                                    JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
-                                    labels.add(tempr);
-                                    label.addMouseListener(handler);
-                                }
-                            }
                             }
 
                         }
@@ -2739,7 +3200,7 @@ public class SeatInGui extends JFrame {
                 }
             }
         }
-        JButton back= new JButton();
+        JButton back = new JButton();
         tree.add(back);
         back.addActionListener(new ActionListener() {
             @Override
@@ -2748,7 +3209,13 @@ public class SeatInGui extends JFrame {
                 mainContainer.validate();
                 mainContainer.repaint();
                 try {
-                    student.registerUserLogoutFromCourse(node.getCode(),node.getYear());
+                    if (profile.equals("s"))
+                        student.registerUserIsConsultingCourse(node.getCode(), node.getYear(), "s");
+                    if (profile.equals("a"))
+                        administrator.registerUserIsConsultingCourse(node.getCode(), node.getYear(), "a");
+                    if (profile.equals("t"))
+                        teacher.registerUserIsConsultingCourse(node.getCode(), node.getYear(), "t");
+
                     System.out.print("user is having logout");
                 } catch (RemoteException e1) {
                     e1.printStackTrace();
@@ -2763,932 +3230,28 @@ public class SeatInGui extends JFrame {
                 }
             }
         });
-
-        setVisible(true);
-        setSize(600, 400);
-        return tree;
-    }
-    public JPanel viewTreeTeacher(Node node) throws IOException, NotBoundException {
-        teacher.registerUserIsConsultingCourse(node.getCode(),node.getYear(),"t");
-       System.out.print("teacher is having login ");
-        JPanel tree = new JPanel();
-        int i=node.treeLength();
-        tree.setLayout(new GridLayout(i,7));
-        JTextField name = new JTextField();
-        name.setText(node.getName());
-        List<JLabel[]> labels = new ArrayList<>();
-
-        JTextField description = new JTextField();
-        description.setText(node.getDescription());
-        List<Node> nodelist = node.getChildren(); //restituisce i figli del primo livello
-        JLabel label = new JLabel();
-        JPanel p = new JPanel(new GridLayout(3, 2));
-
-        p.add(new JLabel("Nome Corso"));
-        p.add(name);
-        p.add(new JLabel("Descrizione"));
-        p.add(description);
-        p.add(new JLabel("SPECIFICARE DIRECTORY (usata per il download di file) : "));
-        JTextField directory = new JTextField(30);
-        p.add(directory);
-        tree.add(p);
-
-
-        class MyMouseHandler extends MouseAdapter {
-            ArrayList<String> codeToZip = new ArrayList<>();
-
-            @Override
-            public void mouseClicked(MouseEvent evt) {
-                JLabel source = (JLabel) evt.getSource();
-                System.out.println(source);
-
-                for (JLabel[] label : labels) {
-                    if (label[0].equals(source)) {
-                        if (directory.getText().equals(""))
-                            JOptionPane.showMessageDialog(tree, "Il download delle risorse non verra' eseguito finche' non verra' specificata una directory!");
-
-                        else {
-                            //posso eseguire il download.
-                            //caso unico file:
-                            if (source.getText().contains("."))
-                            //e' sicuramente un file
-                            {
-
-
-                                try {
-                                    byte[] bytea = teacher.getFile(label[1].getText(), node.getCode(), node.getYear());
-                                    int response = JOptionPane.showConfirmDialog(tree, "Il file e' pronto per il download. Vuoi aggiungere un altro file?");
-                                    if (response == JOptionPane.NO_OPTION) {
-                                        if (codeToZip.size() == 0) {
-                                            try (FileOutputStream fos = new FileOutputStream(directory.getText() + "/" + source.getText())) {
-                                                //scrive nella cartella specificata dall'utente
-                                                fos.write(bytea);
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-
-
-                                        } else {
-                                            codeToZip.add(label[1].getText());
-                                            //posso zippare i contenuti scelti
-                                            ArrayList<String> pathFiles = new ArrayList<String>();
-                                            for (String l : codeToZip) {
-                                                String fileName = "";
-                                                try {
-                                                    fileName = teacher.findFileName(l);
-                                                    byte[] bytex = teacher.getFile(l, node.getCode(), node.getYear());
-                                                    Utility.createDirectory(directory.getText() + "/Archivio");
-                                                    FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
-                                                    fos.write(bytex);
-                                                    pathFiles.add(directory.getText() + "/Archivio/" + fileName);
-                                                } catch (SQLException e) {
-                                                    e.printStackTrace();
-                                                } catch (RemoteException e) {
-                                                    e.printStackTrace();
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                Utility.zip(pathFiles, directory.getText() + "/" + node.getName() + ".zip");
-
-                                                //ricreo per uso successivo
-                                                // createDirectory("/Users/gdelvecchio/Desktop/laboratorioB/Files");
-
-                                            }
-                                            //cancello tutti i file che avevo scritto su client
-                                            Utility.deleteDir(new File(directory.getText() + "/Archivio/"));
-
-                                        }
-                                    }
-                                    if (response == JOptionPane.YES_OPTION) {
-
-                                        codeToZip.add(label[1].getText());
-                                        System.out.println("lista da zippare" + codeToZip.get(0));
-                                    }
-                                } catch (RemoteException e) {
-                                    e.printStackTrace();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-                            } else
-                                    //è una cartella da zippare
-                                    {
-                                        //codice della cartella, da ricercare nel database
-                                        ArrayList<String> ls = new ArrayList<>();
-                                        try {
-                                            ls = teacher.findFolder(label[1].getText());
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
-                                        } catch (RemoteException e) {
-                                            e.printStackTrace();
-                                        }
-                                        ArrayList<String> pathFiles = new ArrayList<String>();
-                                        for (String l : ls) {
-                                            String fileName = "";
-                                            try {
-                                                fileName = teacher.findFileName(l);
-                                                byte[] bytex = teacher.getFile(l, node.getCode(), node.getYear());
-                                                Utility.createDirectory(directory.getText() + "/Archivio");
-                                                FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
-                                                fos.write(bytex);
-                                                pathFiles.add(directory.getText() + "/Archivio/" + fileName);
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
-                                            } catch (RemoteException e) {
-                                                e.printStackTrace();
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                            Utility.zip(pathFiles, directory.getText() + "/" + node.getName() + ".zip");
-
-                                        }
-                                        //cancello tutti i file che avevo scritto su server
-                                        Utility.deleteDir(new File(directory.getText() + "/Archivio/"));
-                                        JOptionPane.showMessageDialog(tree,"cartella zippata!");
-                            }
-                        }
-                    }
-                }
-            }
+        if (profile.equals("t") && way.equals("enabled")) {
+            tree.add(upload);
+            tree.add(delete);
         }
-        MyMouseHandler handler = new MyMouseHandler();
-        JLabel l= new JLabel();
-        for (Node n : nodelist) {
-            //aggiungo la sezione
-            if (n.getVisibility().equals("pubblica")) {
-                tree.add(new JLabel(n.getName()));
-                //indentazione 0
-                //se la sezione ha figli
-                if (n.getChildren().size() != 0) {
-                    //potrebbe avere file, cartelle o sottosezioni!
-                    List<Node> list = n.getChildren();
-                    for (Node nodo : list) {
-                        if (nodo.getFile().equals("false") && nodo.getVisibility().equals("pubblica")){
-                        //e' una cartella senza sottosezioni!
-                            {
-                                //indentazione 1
-                                tree.add(l);
-
-                                label = new JLabel(nodo.getName());
-                                Font font = label.getFont();
-                                Map attributes = font.getAttributes();
-                                attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                label.setFont(font.deriveFont(attributes));
-                                tree.add(label);
-                                JLabel[] temp = {label, new JLabel(nodo.getCode())};
-                                labels.add(temp);
-                                label.addMouseListener(handler);
-
-                                List<Node> nodeFile = nodo.getChildren();
-
-                                //print di tutti i file
-                                for (Node files : nodeFile) {
-                                    if (files.getVisibility().equals("pubblica")) {
-                                        //file dentro una cartella
-                                        //indentazione 2
-                                        for (int z = 0; z < 3; z++)
-                                            tree.add(l);
-                                        label = new JLabel(files.getName());
-                                        Font f = label.getFont();
-                                        Map a = font.getAttributes();
-                                        attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                        label.setFont(f.deriveFont(a));
-                                        tree.add(label);
-                                        JLabel[] tempr = {label, new JLabel(files.getCode())};
-                                        labels.add(tempr);
-                                        label.addMouseListener(handler);
-
-                                    }
-                                }
-                            }
-                            //se è privata non stampo ne la cartella ne i suoi file
-                        }
-                        if (nodo.getFile().equals("true") && nodo.getVisibility().equals("pubblica"))
-                        //e' un file senza sottosezioni, che ovviamente non puo' avere figli!!
-                        {
-                            //indentazione 1
-                            //print di tutti i file
-                            tree.add(l);
-
-                            label = new JLabel((nodo.getName()));
-                            Font font = label.getFont();
-                            Map attributes = font.getAttributes();
-                            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                            label.setFont(font.deriveFont(attributes));
-                            tree.add(label);
-                            JLabel[] tempr = {label, new JLabel(nodo.getCode())};
-                            labels.add(tempr);
-                            label.addMouseListener(handler);
-                        } else
-                        //significa che e' una sottosezione
-                        {
-                            if (nodo.getVisibility().equals("pubblica")){
-                            //indentazione 1
-                            tree.add(l);
-                            label = new JLabel(nodo.getName());
-                            tree.add(label);
-                            List<Node> nodes = nodo.getChildren();
-                            for (Node nodoo : nodes) {
-
-                                if (nodoo.getFile().equals("false") && nodoo.getVisibility().equals("pubblica"))
-
-                                //e' una cartella
-                                {
-                                    for (int a = 0; a < 4; a++)
-                                        tree.add(l);
-                                    label = new JLabel(nodoo.getName());
-                                    Font font = label.getFont();
-                                    Map attributes = font.getAttributes();
-                                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                    label.setFont(font.deriveFont(attributes));
-                                    JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
-                                    labels.add(tempr);
-                                    label.addMouseListener(handler);
-                                    tree.add(label);
-                                    List<Node> nodeFil = nodoo.getChildren();
-                                    //print di tutti i file
-                                    for (Node files : nodeFil) {
-
-                                        if (files.getVisibility().equals("pubblica")) {
-                                            //indentazione 5
-                                            for (int a = 0; a < 6; a++)
-                                                tree.add(l);
-
-                                            label = new JLabel(files.getName());
-                                            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                            label.setFont(font.deriveFont(attributes));
-                                            tree.add(label);
-                                            JLabel[] tmpr = {label, new JLabel(files.getCode())};
-                                            labels.add(tmpr);
-                                            label.addMouseListener(handler);
-                                        }
-                                    }
-
-                                }
-                                if (nodoo.getFile().equals("true") && nodoo.getVisibility().equals("pubblica"))
-                                //e' un file senza cartella!
-                                {
-                                    //indentazione 5
-                                    for (int a = 0; a < 5; a++)
-                                        tree.add(l);
-                                    //print di tutti i file
-                                    label = new JLabel(nodoo.getName());
-                                    Font font = label.getFont();
-                                    Map attributes = font.getAttributes();
-                                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                    label.setFont(font.deriveFont(attributes));
-                                    tree.add(label);
-                                    JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
-                                    labels.add(tempr);
-                                    label.addMouseListener(handler);
-                                }
-                            }
-                            }
-
-                        }
-                    }
-
-                }
-            }
-        }
-        JButton back= new JButton();
-        tree.add(back);
-        back.addActionListener(new ActionListener() {
+        delete.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 mainContainer.removeAll();
-                mainContainer.validate();
                 mainContainer.repaint();
-                try {
-                	teacher.registerUserLogoutFromCourse(node.getCode(),node.getYear());
-                    System.out.print("user is having logout");
-                } catch (RemoteException e1) {
-                    e1.printStackTrace();
-                }
-               
-                    mainContainer.add(teacherPanel());
-                    setVisible(true);
-              
+                mainContainer.validate();
+                mainContainer.add(deleteInTree(node));
+                setVisible(true);
             }
         });
-
         setVisible(true);
         setSize(600, 400);
         return tree;
     }
-    public JPanel viewTreeMineCourseTeacher(Node node) throws IOException, NotBoundException {
-        JPanel tree = new JPanel();
-        int i=node.treeLength();
-        tree.setLayout(new GridLayout(i,7));
-        JTextField name = new JTextField();
-        name.setText(node.getName());
-        List<JLabel[]> labels = new ArrayList<>();
-
-        JTextField description = new JTextField();
-        description.setText(node.getDescription());
-        List<Node> nodelist = node.getChildren(); //restituisce i figli del primo livello
-        JLabel label = new JLabel();
-        JPanel p = new JPanel(new GridLayout(3, 2));
-
-        p.add(new JLabel("Nome Corso"));
-        p.add(name);
-        p.add(new JLabel("Descrizione"));
-        p.add(description);
-        p.add(new JLabel("SPECIFICARE DIRECTORY (usata per il download di file) : "));
-        JTextField directory = new JTextField(30);
-        p.add(directory);
-        tree.add(p);
-
-
-        class MyMouseHandler extends MouseAdapter {
-            ArrayList<String> codeToZip = new ArrayList<>();
-
-            @Override
-            public void mouseClicked(MouseEvent evt) {
-                JLabel source = (JLabel) evt.getSource();
-                System.out.println(source);
-
-                for (JLabel[] label : labels) {
-                    if (label[0].equals(source)) {
-                        if (directory.getText().equals(""))
-                            JOptionPane.showMessageDialog(tree, "Il download delle risorse non verra' eseguito finche' non verra' specificata una directory!");
-
-                        else {
-                            //posso eseguire il download.
-                            //caso unico file:
-                            if (source.getText().contains("."))
-                            //e' sicuramente un file
-                            {
-
-
-                                try {
-                                    byte[] bytea = teacher.getFile(label[1].getText(), node.getCode(), node.getYear());
-                                    int response = JOptionPane.showConfirmDialog(tree, "Il file e' pronto per il download. Vuoi aggiungere un altro file?");
-                                    if (response == JOptionPane.NO_OPTION) {
-                                        if (codeToZip.size() == 0) {
-                                            try (FileOutputStream fos = new FileOutputStream(directory.getText() + "/" + source.getText())) {
-                                                //scrive nella cartella specificata dall'utente
-                                                fos.write(bytea);
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-
-
-                                        } else {
-                                            codeToZip.add(label[1].getText());
-                                            //posso zippare i contenuti scelti
-                                            ArrayList<String> pathFiles = new ArrayList<String>();
-                                            for (String l : codeToZip) {
-                                                String fileName = "";
-                                                try {
-                                                    fileName = teacher.findFileName(l);
-                                                    byte[] bytex = teacher.getFile(l, node.getCode(), node.getYear());
-                                                    Utility.createDirectory(directory.getText() + "/Archivio");
-                                                    FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
-                                                    fos.write(bytex);
-                                                    pathFiles.add(directory.getText() + "/Archivio/" + fileName);
-                                                } catch (SQLException e) {
-                                                    e.printStackTrace();
-                                                } catch (RemoteException e) {
-                                                    e.printStackTrace();
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                Utility.zip(pathFiles, directory.getText() + "/" + node.getName() + ".zip");
-
-                                                //ricreo per uso successivo
-                                                // createDirectory("/Users/gdelvecchio/Desktop/laboratorioB/Files");
-
-                                            }
-                                            //cancello tutti i file che avevo scritto su client
-                                            Utility.deleteDir(new File(directory.getText() + "/Archivio/"));
-
-                                        }
-                                    }
-                                    if (response == JOptionPane.YES_OPTION) {
-
-                                        codeToZip.add(label[1].getText());
-                                        System.out.println("lista da zippare" + codeToZip.get(0));
-                                    }
-                                } catch (RemoteException e) {
-                                    e.printStackTrace();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-                            } else
-                                    //è una cartella da zippare
-                                    {
-                                        //codice della cartella, da ricercare nel database
-                                        ArrayList<String> ls = new ArrayList<>();
-                                        try {
-                                            ls = teacher.findFolder(label[1].getText());
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
-                                        } catch (RemoteException e) {
-                                            e.printStackTrace();
-                                        }
-                                        ArrayList<String> pathFiles = new ArrayList<String>();
-                                        for (String l : ls) {
-                                            String fileName = "";
-                                            try {
-                                                fileName = teacher.findFileName(l);
-                                                byte[] bytex = teacher.getFile(l, node.getCode(), node.getYear());
-                                                Utility.createDirectory(directory.getText() + "/Archivio");
-                                                FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
-                                                fos.write(bytex);
-                                                pathFiles.add(directory.getText() + "/Archivio/" + fileName);
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
-                                            } catch (RemoteException e) {
-                                                e.printStackTrace();
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                            Utility.zip(pathFiles, directory.getText() + "/" + node.getName() + ".zip");
-
-                                        }
-                                        //cancello tutti i file che avevo scritto su server
-                                        Utility.deleteDir(new File(directory.getText() + "/Archivio/"));
-                                        JOptionPane.showMessageDialog(tree,"cartella zippata!");
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        MyMouseHandler handler = new MyMouseHandler();
-        JLabel l= new JLabel();
-        for (Node n : nodelist) {
-            //aggiungo la sezione
-            if (n.getVisibility().equals("pubblica")) {
-                tree.add(new JLabel(n.getName()));
-                //indentazione 0
-                //se la sezione ha figli
-                if (n.getChildren().size() != 0) {
-                    //potrebbe avere file, cartelle o sottosezioni!
-                    List<Node> list = n.getChildren();
-                    for (Node nodo : list) {
-                        if (nodo.getFile().equals("false") && nodo.getVisibility().equals("pubblica")){
-                        //e' una cartella senza sottosezioni!
-                            {
-                                //indentazione 1
-                                tree.add(l);
-
-                                label = new JLabel(nodo.getName());
-                                Font font = label.getFont();
-                                Map attributes = font.getAttributes();
-                                attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                label.setFont(font.deriveFont(attributes));
-                                tree.add(label);
-                                JLabel[] temp = {label, new JLabel(nodo.getCode())};
-                                labels.add(temp);
-                                label.addMouseListener(handler);
-
-                                List<Node> nodeFile = nodo.getChildren();
-
-                                //print di tutti i file
-                                for (Node files : nodeFile) {
-                                    if (files.getVisibility().equals("pubblica")) {
-                                        //file dentro una cartella
-                                        //indentazione 2
-                                        for (int z = 0; z < 3; z++)
-                                            tree.add(l);
-                                        label = new JLabel(files.getName());
-                                        Font f = label.getFont();
-                                        Map a = font.getAttributes();
-                                        attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                        label.setFont(f.deriveFont(a));
-                                        tree.add(label);
-                                        JLabel[] tempr = {label, new JLabel(files.getCode())};
-                                        labels.add(tempr);
-                                        label.addMouseListener(handler);
-
-                                    }
-                                }
-                            }
-                            //se è privata non stampo ne la cartella ne i suoi file
-                        }
-                        if (nodo.getFile().equals("true") && nodo.getVisibility().equals("pubblica"))
-                        //e' un file senza sottosezioni, che ovviamente non puo' avere figli!!
-                        {
-                            //indentazione 1
-                            //print di tutti i file
-                            tree.add(l);
-
-                            label = new JLabel((nodo.getName()));
-                            Font font = label.getFont();
-                            Map attributes = font.getAttributes();
-                            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                            label.setFont(font.deriveFont(attributes));
-                            tree.add(label);
-                            JLabel[] tempr = {label, new JLabel(nodo.getCode())};
-                            labels.add(tempr);
-                            label.addMouseListener(handler);
-                        } else
-                        //significa che e' una sottosezione
-                        {
-                            if (nodo.getVisibility().equals("pubblica")){
-                            //indentazione 1
-                            tree.add(l);
-                            label = new JLabel(nodo.getName());
-                            tree.add(label);
-                            List<Node> nodes = nodo.getChildren();
-                            for (Node nodoo : nodes) {
-
-                                if (nodoo.getFile().equals("false") && nodoo.getVisibility().equals("pubblica"))
-
-                                //e' una cartella
-                                {
-                                    for (int a = 0; a < 4; a++)
-                                        tree.add(l);
-                                    label = new JLabel(nodoo.getName());
-                                    Font font = label.getFont();
-                                    Map attributes = font.getAttributes();
-                                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                    label.setFont(font.deriveFont(attributes));
-                                    JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
-                                    labels.add(tempr);
-                                    label.addMouseListener(handler);
-                                    tree.add(label);
-                                    List<Node> nodeFil = nodoo.getChildren();
-                                    //print di tutti i file
-                                    for (Node files : nodeFil) {
-
-                                        if (files.getVisibility().equals("pubblica")) {
-                                            //indentazione 5
-                                            for (int a = 0; a < 6; a++)
-                                                tree.add(l);
-
-                                            label = new JLabel(files.getName());
-                                            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                            label.setFont(font.deriveFont(attributes));
-                                            tree.add(label);
-                                            JLabel[] tmpr = {label, new JLabel(files.getCode())};
-                                            labels.add(tmpr);
-                                            label.addMouseListener(handler);
-                                        }
-                                    }
-
-                                }
-                                if (nodoo.getFile().equals("true") && nodoo.getVisibility().equals("pubblica"))
-                                //e' un file senza cartella!
-                                {
-                                    //indentazione 5
-                                    for (int a = 0; a < 5; a++)
-                                        tree.add(l);
-                                    //print di tutti i file
-                                    label = new JLabel(nodoo.getName());
-                                    Font font = label.getFont();
-                                    Map attributes = font.getAttributes();
-                                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                    label.setFont(font.deriveFont(attributes));
-                                    tree.add(label);
-                                    JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
-                                    labels.add(tempr);
-                                    label.addMouseListener(handler);
-                                }
-                            }
-                            }
-
-                        }
-                    }
-
-                }
-            }
-        }
-        JButton back= new JButton();
-        tree.add(back);
-        back.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                mainContainer.removeAll();
-                mainContainer.validate();
-                mainContainer.repaint();
-                    mainContainer.add(teacherPanel());
-                    setVisible(true);
-              
-            }
-        });
-
-        setVisible(true);
-        setSize(600, 400);
-        return tree;
-    }
-    public JPanel viewTreeAdmin(Node node) throws IOException, NotBoundException {
-        //administrator.registerUserIsConsultingCourse(node.getCode(),node.getYear(),"a");
-       System.out.print("admin is having login ");
-        JPanel tree = new JPanel();
-        int i=node.treeLength();
-        tree.setLayout(new GridLayout(i,7));
-        JTextField name = new JTextField();
-        name.setText(node.getName());
-        List<JLabel[]> labels = new ArrayList<>();
-
-        JTextField description = new JTextField();
-        description.setText(node.getDescription());
-        List<Node> nodelist = node.getChildren(); //restituisce i figli del primo livello
-        JLabel label = new JLabel();
-        JPanel p = new JPanel(new GridLayout(3, 2));
-
-        p.add(new JLabel("Nome Corso"));
-        p.add(name);
-        p.add(new JLabel("Descrizione"));
-        p.add(description);
-        p.add(new JLabel("SPECIFICARE DIRECTORY (usata per il download di file) : "));
-        JTextField directory = new JTextField(30);
-        p.add(directory);
-        tree.add(p);
-
-
-        class MyMouseHandler extends MouseAdapter {
-            ArrayList<String> codeToZip = new ArrayList<>();
-
-            @Override
-            public void mouseClicked(MouseEvent evt) {
-                JLabel source = (JLabel) evt.getSource();
-                System.out.println(source);
-
-                for (JLabel[] label : labels) {
-                    if (label[0].equals(source)) {
-                        if (directory.getText().equals(""))
-                            JOptionPane.showMessageDialog(tree, "Il download delle risorse non verra' eseguito finche' non verra' specificata una directory!");
-
-                        else {
-                            //posso eseguire il download.
-                            //caso unico file:
-                            if (source.getText().contains("."))
-                            //e' sicuramente un file
-                            {
-
-
-                                try {
-                                    byte[] bytea = administrator.getFile(label[1].getText(), node.getCode(), node.getYear());
-                                    int response = JOptionPane.showConfirmDialog(tree, "Il file e' pronto per il download. Vuoi aggiungere un altro file?");
-                                    if (response == JOptionPane.NO_OPTION) {
-                                        if (codeToZip.size() == 0) {
-                                            try (FileOutputStream fos = new FileOutputStream(directory.getText() + "/" + source.getText())) {
-                                                //scrive nella cartella specificata dall'utente
-                                                fos.write(bytea);
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-
-
-                                        } else {
-                                            codeToZip.add(label[1].getText());
-                                            //posso zippare i contenuti scelti
-                                            ArrayList<String> pathFiles = new ArrayList<String>();
-                                            for (String l : codeToZip) {
-                                                String fileName = "";
-                                                try {
-                                                    fileName = administrator.findFileName(l);
-                                                    byte[] bytex = administrator.getFile(l, node.getCode(), node.getYear());
-                                                    Utility.createDirectory(directory.getText() + "/Archivio");
-                                                    FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
-                                                    fos.write(bytex);
-                                                    pathFiles.add(directory.getText() + "/Archivio/" + fileName);
-                                                } catch (SQLException e) {
-                                                    e.printStackTrace();
-                                                } catch (RemoteException e) {
-                                                    e.printStackTrace();
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                Utility.zip(pathFiles, directory.getText() + "/" + node.getName() + ".zip");
-
-                                                //ricreo per uso successivo
-                                                // createDirectory("/Users/gdelvecchio/Desktop/laboratorioB/Files");
-
-                                            }
-                                            //cancello tutti i file che avevo scritto su client
-                                            Utility.deleteDir(new File(directory.getText() + "/Archivio/"));
-
-                                        }
-                                    }
-                                    if (response == JOptionPane.YES_OPTION) {
-
-                                        codeToZip.add(label[1].getText());
-                                        System.out.println("lista da zippare" + codeToZip.get(0));
-                                    }
-                                } catch (RemoteException e) {
-                                    e.printStackTrace();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-                            } else
-                                    //è una cartella da zippare
-                                    {
-                                        //codice della cartella, da ricercare nel database
-                                        ArrayList<String> ls = new ArrayList<>();
-                                        try {
-                                            ls = administrator.findFolder(label[1].getText());
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
-                                        } catch (RemoteException e) {
-                                            e.printStackTrace();
-                                        }
-                                        ArrayList<String> pathFiles = new ArrayList<String>();
-                                        for (String l : ls) {
-                                            String fileName = "";
-                                            try {
-                                                fileName = administrator.findFileName(l);
-                                                byte[] bytex = administrator.getFile(l, node.getCode(), node.getYear());
-                                                Utility.createDirectory(directory.getText() + "/Archivio");
-                                                FileOutputStream fos = new FileOutputStream(directory.getText() + "/Archivio/" + fileName);
-                                                fos.write(bytex);
-                                                pathFiles.add(directory.getText() + "/Archivio/" + fileName);
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
-                                            } catch (RemoteException e) {
-                                                e.printStackTrace();
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                            Utility.zip(pathFiles, directory.getText() + "/" + node.getName() + ".zip");
-
-                                        }
-                                        //cancello tutti i file che avevo scritto su server
-                                        Utility.deleteDir(new File(directory.getText() + "/Archivio/"));
-                                        JOptionPane.showMessageDialog(tree,"cartella zippata!");
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        MyMouseHandler handler = new MyMouseHandler();
-        JLabel l= new JLabel();
-        for (Node n : nodelist) {
-            //aggiungo la sezione
-            if (n.getVisibility().equals("pubblica")) {
-                tree.add(new JLabel(n.getName()));
-                //indentazione 0
-                //se la sezione ha figli
-                if (n.getChildren().size() != 0) {
-                    //potrebbe avere file, cartelle o sottosezioni!
-                    List<Node> list = n.getChildren();
-                    for (Node nodo : list) {
-                        if (nodo.getFile().equals("false") && nodo.getVisibility().equals("pubblica")){
-                        //e' una cartella senza sottosezioni!
-                            {
-                                //indentazione 1
-                                tree.add(l);
-
-                                label = new JLabel(nodo.getName());
-                                Font font = label.getFont();
-                                Map attributes = font.getAttributes();
-                                attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                label.setFont(font.deriveFont(attributes));
-                                tree.add(label);
-                                JLabel[] temp = {label, new JLabel(nodo.getCode())};
-                                labels.add(temp);
-                                label.addMouseListener(handler);
-
-                                List<Node> nodeFile = nodo.getChildren();
-
-                                //print di tutti i file
-                                for (Node files : nodeFile) {
-                                    if (files.getVisibility().equals("pubblica")) {
-                                        //file dentro una cartella
-                                        //indentazione 2
-                                        for (int z = 0; z < 3; z++)
-                                            tree.add(l);
-                                        label = new JLabel(files.getName());
-                                        Font f = label.getFont();
-                                        Map a = font.getAttributes();
-                                        attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                        label.setFont(f.deriveFont(a));
-                                        tree.add(label);
-                                        JLabel[] tempr = {label, new JLabel(files.getCode())};
-                                        labels.add(tempr);
-                                        label.addMouseListener(handler);
-
-                                    }
-                                }
-                            }
-                            //se è privata non stampo ne la cartella ne i suoi file
-                        }
-                        if (nodo.getFile().equals("true") && nodo.getVisibility().equals("pubblica"))
-                        //e' un file senza sottosezioni, che ovviamente non puo' avere figli!!
-                        {
-                            //indentazione 1
-                            //print di tutti i file
-                            tree.add(l);
-
-                            label = new JLabel((nodo.getName()));
-                            Font font = label.getFont();
-                            Map attributes = font.getAttributes();
-                            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                            label.setFont(font.deriveFont(attributes));
-                            tree.add(label);
-                            JLabel[] tempr = {label, new JLabel(nodo.getCode())};
-                            labels.add(tempr);
-                            label.addMouseListener(handler);
-                        } else
-                        //significa che e' una sottosezione
-                        {
-                            if (nodo.getVisibility().equals("pubblica")){
-                            //indentazione 1
-                            tree.add(l);
-                            label = new JLabel(nodo.getName());
-                            tree.add(label);
-                            List<Node> nodes = nodo.getChildren();
-                            for (Node nodoo : nodes) {
-
-                                if (nodoo.getFile().equals("false") && nodoo.getVisibility().equals("pubblica"))
-
-                                //e' una cartella
-                                {
-                                    for (int a = 0; a < 4; a++)
-                                        tree.add(l);
-                                    label = new JLabel(nodoo.getName());
-                                    Font font = label.getFont();
-                                    Map attributes = font.getAttributes();
-                                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                    label.setFont(font.deriveFont(attributes));
-                                    JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
-                                    labels.add(tempr);
-                                    label.addMouseListener(handler);
-                                    tree.add(label);
-                                    List<Node> nodeFil = nodoo.getChildren();
-                                    //print di tutti i file
-                                    for (Node files : nodeFil) {
-
-                                        if (files.getVisibility().equals("pubblica")) {
-                                            //indentazione 5
-                                            for (int a = 0; a < 6; a++)
-                                                tree.add(l);
-
-                                            label = new JLabel(files.getName());
-                                            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                            label.setFont(font.deriveFont(attributes));
-                                            tree.add(label);
-                                            JLabel[] tmpr = {label, new JLabel(files.getCode())};
-                                            labels.add(tmpr);
-                                            label.addMouseListener(handler);
-                                        }
-                                    }
-
-                                }
-                                if (nodoo.getFile().equals("true") && nodoo.getVisibility().equals("pubblica"))
-                                //e' un file senza cartella!
-                                {
-                                    //indentazione 5
-                                    for (int a = 0; a < 5; a++)
-                                        tree.add(l);
-                                    //print di tutti i file
-                                    label = new JLabel(nodoo.getName());
-                                    Font font = label.getFont();
-                                    Map attributes = font.getAttributes();
-                                    attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                                    label.setFont(font.deriveFont(attributes));
-                                    tree.add(label);
-                                    JLabel[] tempr = {label, new JLabel(nodoo.getCode())};
-                                    labels.add(tempr);
-                                    label.addMouseListener(handler);
-                                }
-                            }
-                            }
-
-                        }
-                    }
-
-                }
-            }
-        }
-        JButton back= new JButton();
-        tree.add(back);
-        back.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                mainContainer.removeAll();
-                mainContainer.validate();
-                mainContainer.repaint();
-                //try {
-                   // student.registerUserLogoutFromCourse(node.getCode(),node.getYear());
-                    System.out.print("admin is having logout");
-                //} catch (RemoteException e1) {
-                  //  e1.printStackTrace();
-                //}
-                    mainContainer.add(adminPanel());
-                    setVisible(true);
-             
-            }
-        });
-
-        setVisible(true);
-        setSize(600, 400);
-        return tree;
-    }
-
+    
     public JPanel viewProfileAdmin(){
           JPanel profileInformation = new JPanel();
-          profileInformation.setLayout(new GridLayout(6, 2));
+          profileInformation.setLayout(new GridLayout(8, 2));
           JLabel personalData[] = {new JLabel("nome"), new JLabel("cognome"), new JLabel("matricola"), new JLabel("email"), new JLabel("Dipartimento"), new JLabel("Stato Profilo")};
           JTextField personalDataTextField[] = {new JTextField("nome"), new JTextField("cognome"), new JTextField("matricola"),
                   new JTextField("email"), new JTextField("Dipartimento"), new JTextField("tipologia")};
@@ -3705,14 +3268,28 @@ public class SeatInGui extends JFrame {
               profileInformation.add(personalDataTextField[i]);
               personalDataTextField[i].setEditable(false);
           }
-  
-  
+          JButton back=new JButton("indietro");
+          profileInformation.add(new JLabel(""));
+          profileInformation.add(new JLabel(""));
+          profileInformation.add(new JLabel(""));
+          profileInformation.add(back);
+          back.addActionListener(new ActionListener() {
+              @Override
+              public void actionPerformed(ActionEvent e) {
+                  mainContainer.removeAll();
+                  mainContainer.repaint();
+                  mainContainer.validate();
+                  mainContainer.add(adminPanel());
+                  setVisible(true);
+              }
+          });
+          
           setVisible(true);
           return profileInformation;
       }
  	public JPanel viewProfileTeacher(){
      JPanel profileInformation = new JPanel();
-     profileInformation.setLayout(new GridLayout(6, 2));
+     profileInformation.setLayout(new GridLayout(8, 2));
      JLabel personalData[] = {new JLabel("nome"), new JLabel("cognome"), new JLabel("matricola"), new JLabel("email"), new JLabel("Dipartimento"), new JLabel("Stato Profilo")};
      JTextField personalDataTextField[] = {new JTextField("nome"), new JTextField("cognome"), new JTextField("matricola"),
              new JTextField("email"), new JTextField("cdl"), new JTextField("Dipartimento"), new JTextField("tipologia")};
@@ -3729,6 +3306,22 @@ public class SeatInGui extends JFrame {
          profileInformation.add(personalDataTextField[i]);
          personalDataTextField[i].setEditable(false);
      }
+     JButton back=new JButton("indietro");
+     profileInformation.add(new JLabel(""));
+     profileInformation.add(new JLabel(""));
+     profileInformation.add(new JLabel(""));
+     profileInformation.add(back);
+     back.addActionListener(new ActionListener() {
+         @Override
+         public void actionPerformed(ActionEvent e) {
+             mainContainer.removeAll();
+             mainContainer.repaint();
+             mainContainer.validate();
+             mainContainer.add(teacherPanel());
+             setVisible(true);
+         }
+     });
+     
 
 
      setVisible(true);
@@ -3766,7 +3359,8 @@ public class SeatInGui extends JFrame {
  	    	   if(loginCheck(email.getText(),psw.getText())){ 
  	        	   switch (utenza){
  		               case "Studente":
- 		            	   student= new SeatInStudent(null, null, null, null, null, null, null, 0, 0, null, null);
+ 		            	//   student= new SeatInStudent(null, null, null, null, null, null, null, 0, 0, null, null);
+ 		            	  //student.getInstance();
  		            	   student.setEmail(email.getText());
  		                   student.setPassword(psw.getText());
  		            	   try {
@@ -3850,6 +3444,7 @@ public class SeatInGui extends JFrame {
  	   container.add(userblock);
  	   return userblock;
  	}
+ 	
  	public  JPanel activationUser(){
  	   JPanel activeUser = new JPanel();
  	   activeUser.setLayout(new FlowLayout());
@@ -4117,163 +3712,6 @@ public class SeatInGui extends JFrame {
         setSize(600, 400);
         return addCoursePanel;
     }
-    public JPanel addOptionalCourseTeacher(SeatInTeacher t) throws SQLException, RemoteException{
-        JPanel addCoursePanel = new JPanel();
-        addCoursePanel.setLayout(new FlowLayout());
-        //tutti i corsi di laurea disponibili senza contare quello a cui è gia' iscritto lo studente
-        List<String[]> degreeAvailable = t.courseNotInStudyPlanTeacher();
-        String[] degreeCourse = new String[degreeAvailable.size()];
-        int i = 0;
-        JButton signUp = new JButton("Iscriviti");
-
-
-        //in questo modo ottengo tutti i corsi di laurea registrati sulla piattaforma che sono differenti da quello dell'utente
-        //degree[0]contiene nome
-        //degree[1] contiene codice
-        for (String[] degreeAv : degreeAvailable) {
-            degreeCourse[i] = degreeAv[0];
-            i++;
-        }
-
-
-        //significa che non ci sono corsiDiLaurea disponibili a parte quello per cui gia' appartiene l'utente
-       // if (degreeCourse.length == 1)
-         //   JOptionPane.showMessageDialog(addCoursePanel, "ATTENZIONE: nessun corso di laurea disponibile");
-
-
-        JTextArea areatext = new JTextArea(10, 15);
-        //prima combo box
-        JComboBox course = new JComboBox(degreeCourse);
-
-        JComboBox optionalCourse = new JComboBox();
-        optionalCourse.removeAllItems();
-        course.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                    optionalCourse.removeAllItems();
-                    if (course.getSelectedIndex()==0)
-                        areatext.removeAll();
-                    List<String[]> coursesbyDegree = new ArrayList<>();
-                    for (String[] degreeAv : degreeAvailable)
-                        if (course.getSelectedItem().equals(degreeAv[0])) {
-
-                            try {
-                                coursesbyDegree = t.courseNotInStudyPlanTeacher();
-                                System.out.println("courses by degree" + coursesbyDegree.size());
-                                for (String[] x : coursesbyDegree) {
-                                    optionalCourse.addItem("codice corso:" + x[0] + ".Anno accademico:" + x[2]);
-                                }
-                            } catch (SQLException e1) {
-                                e1.printStackTrace();
-                            } catch (RemoteException e1) {
-                                e1.printStackTrace();
-                            }
-
-                        }
-
-                    final List<String[]> courseBYdegree=coursesbyDegree;
-                    optionalCourse.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            if (optionalCourse.getSelectedIndex() != -1) {
-                                System.out.println(course.getSelectedIndex());
-                                String x = optionalCourse.getSelectedItem().toString();
-                                x = x.replaceAll("codice corso:", "");
-                                x = x.replaceAll("Anno accademico:", "");
-                                String[] y = x.split(Pattern.quote("."));
-                                for (String[] info : courseBYdegree) {
-                                    if (y[0].equals(info[0]) && y[1].equals(info[2])) {
-                                        List<String[]> teachers = t.teacherTeachesCourse(info[0], Integer.parseInt(info[2]));
-                                        areatext.setText("nome corso:" + info[1] + "\n" +
-                                                "descrizione:" + info[3] + "\n" + "docenti del corso:");
-                                        System.out.println("codice" + info[0] +
-                                                "nome " + info[1] + "anno" + info[2] + "descrizione" + info[3]);
-                                        for (String[] teacher : teachers)
-                                            areatext.append(teacher[0] + " " + teacher[1]);
-                                    } else
-                                        System.out.println("non ho trovato ");
-                                }
-
-
-                            }
-
-                        }
-
-
-                    });
-            }
-        });
-
-
-
-        signUp.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                String x = optionalCourse.getSelectedItem().toString();
-                x = x.replaceAll("codice corso:", "");
-                x = x.replaceAll("Anno accademico:", "");
-                String[] y = x.split(Pattern.quote("."));
-                //y[0] codice
-                // y1 anno
-                List<String> teacherEmail=new ArrayList<>();
-                try {
-                    teacherEmail=t.teacherEmailForStudentEmailSender(y[0],Integer.parseInt(y[1]));
-                } catch (SQLException e1) {
-                    e1.printStackTrace();
-                } catch (RemoteException e1) {
-                    e1.printStackTrace();
-                }
-                try {
-                    t.courseSubscription(teacherEmail, y[1],y[0]);
-                } catch (MessagingException e1) {
-                    e1.printStackTrace();
-                } catch (RemoteException e1) {
-                    e1.printStackTrace();
-                }
-
-
-                int reply=JOptionPane.showConfirmDialog(addCoursePanel, "stai tentando di iscriverti al corso selezionato. Continuare?");
-                if (reply == JOptionPane.YES_OPTION) {
-                    mainContainer.removeAll();
-                    mainContainer.validate();
-                    mainContainer.repaint();
-               
-                        mainContainer.add(teacherPanel());
-                
-                    setVisible(true);
-                }
-
-            }
-        });
-
-        JButton back = new JButton("Annulla");
-        back.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // welcometoSeatIn();
-                addCoursePanel.removeAll();
-                addCoursePanel.validate();
-                addCoursePanel.repaint();
-                
-                	teacherPanel();
-               
-            }
-        });
-        addCoursePanel.add(course);
-        addCoursePanel.add(optionalCourse);
-        addCoursePanel.add(signUp);
-        addCoursePanel.add(back);
-        addCoursePanel.add(areatext);
-
-
-        Container container = getContentPane();
-        container.add(addCoursePanel);
-        setVisible(true);
-        setSize(600, 400);
-        return addCoursePanel;
-    }
-
 
     public JPanel courseEnable() throws IOException {
         JPanel panelCourse= new JPanel();
@@ -4342,6 +3780,19 @@ public class SeatInGui extends JFrame {
                     JOptionPane.showMessageDialog(panelCourse,"Impossibile validare il corso specificato");
             }
         });
+        JButton back=new JButton("indietro");
+        panelCourse.add(back);
+        back.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.removeAll();
+                mainContainer.repaint();
+                mainContainer.validate();
+                mainContainer.add(adminPanel());
+                setVisible(true);
+            }
+        });
+        
         setVisible(true);
         setSize(600, 400);
         return panelCourse;
@@ -4539,7 +3990,7 @@ public class SeatInGui extends JFrame {
                     boolean flag = false;
                     if (info[3].equals("studente")) {
                         SeatInStudent s = new SeatInStudent("", "", "", info[0], "", "", "", 0, 0, "", "");
-
+                    	
                         Object sp = s.profileInfo();
                         SeatInStudent st = (SeatInStudent) sp;
 
@@ -4758,9 +4209,10 @@ public class SeatInGui extends JFrame {
                 }
 
                 if (whichUser.equals("student")) {
-                    SeatInStudent s = new SeatInStudent("", "", "", emailToUnlock, "", "", "attivo", 0, 0, "", "");
+                	//student.getInstance();
+                   // SeatInStudent s = new SeatInStudent("", "", "", emailToUnlock, "", "", "attivo", 0, 0, "", "");
                     try {
-                        administrator.unlockProfile(s);
+                        administrator.unlockProfile(student);
                     } catch (RemoteException e1) {
                         e1.printStackTrace();
                     }
@@ -4832,12 +4284,16 @@ public class SeatInGui extends JFrame {
                 }
 
         });
-        JButton back = new JButton("Esci");
+        JButton back=new JButton("indietro");
+        unlockprofile.add(back);
         back.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                mainContainer.removeAll();
+                mainContainer.repaint();
+                mainContainer.validate();
                 mainContainer.add(adminPanel());
-                unlockprofile.setVisible(false);
+                setVisible(true);
             }
         });
 
@@ -5040,7 +4496,6 @@ public class SeatInGui extends JFrame {
         listuser.add(user);
 
         enablepanel.add(listuser);
-        ;
         enablepanel.add(scroll);
 
         enablepanel.add(enable);
@@ -5054,6 +4509,1282 @@ public class SeatInGui extends JFrame {
         setSize(500,300);
         return enablepanel;
     }
+
+
+
+    public JPanel statisticsAdmin() throws RemoteException, SQLException {
+        List<String[]> coursesAvailable = administrator.allCourse();
+        String[] comboCourse = new String[coursesAvailable.size() + 1];
+        int index = 1;
+        comboCourse[0] = "-----";
+        for (String[] c : coursesAvailable) {
+            comboCourse[index] = "nome:" + c[0] + "  codice:" + c[1] + "    anno:" + c[2];
+            index++;
+        }
+
+
+        JPanel statsfinal = new JPanel();
+        statsfinal.setLayout(new GridLayout(2, 0));
+        JPanel stats = new JPanel();
+        stats.setLayout(new GridLayout(3, 2));
+
+
+        JTextField timeConnctionAverage = new JTextField();
+        JTextField numberOfConnectionToSeatIn = new JTextField();
+
+
+        Box downloadForCourse = Box.createHorizontalBox();
+        JComboBox course3 = new JComboBox();
+        JTextField textDownloadForCourse = new JTextField();
+
+        downloadForCourse.add(course3);
+        downloadForCourse.add(textDownloadForCourse);
+
+        Box comboTime = Box.createHorizontalBox();
+        String[] dayVector = new String[32];
+        dayVector[0] = "gg";
+        for (int i = 1; i < 10; i++)
+            dayVector[i] = "0" + String.valueOf(i);
+
+        for (int i = 10; i < 32; i++)
+            dayVector[i] = String.valueOf(i);
+
+        String[] monthVector = new String[13];
+        monthVector[0] = "mm";
+        for (int i = 1; i < 10; i++)
+            monthVector[i] = "0" + String.valueOf(i);
+
+        for (int i = 10; i < 13; i++)
+            monthVector[i] = String.valueOf(i);
+
+
+        JComboBox day = new JComboBox(dayVector);
+
+        JComboBox month = new JComboBox(monthVector);
+        JComboBox dayTo = new JComboBox(dayVector);
+        JComboBox monthTo = new JComboBox(monthVector);
+
+
+        JPanel timeForStat = new JPanel(new GridLayout(2, 4));
+        timeForStat.add(new JLabel("da:"));
+        timeForStat.add(day);
+        timeForStat.add(month);
+        timeForStat.add(new JLabel("a"));
+        timeForStat.add(dayTo);
+        timeForStat.add(monthTo);
+
+
+        /** Box per numero complessivo di utenti connessi che stanno visualizzando /interagento con i contenuti del corso */
+        Box seecontents = Box.createHorizontalBox();
+        JComboBox contentsCourse = new JComboBox();
+        for (String c : comboCourse)
+            contentsCourse.addItem(c);
+        JTextField textContentsCourse = new JTextField();
+
+
+        seecontents.add(contentsCourse);
+        seecontents.add(textContentsCourse);
+        /*** aggunta dei componenti al panello stats*/
+
+        stats.add(new JLabel("Numero complessivo di utenti che stanno visuliazzando/interagendo con i contenuti del corso"));
+        stats.add(seecontents);
+        stats.add(new JLabel("Tempo medio di connessione di studenti alle pagine offerte da SeatIn:"));
+        stats.add(timeConnctionAverage);
+        stats.add(new JLabel("Numero complessivo di utenti connessi a SeatIn:"));
+
+        stats.add(numberOfConnectionToSeatIn);
+        numberOfConnectionToSeatIn.setText(String.valueOf(administrator.getUserConnected()));
+
+
+        JPanel stats2 = new JPanel();
+        stats2.setLayout(new GridLayout(6, 2));
+
+
+        JButton update = new JButton("Aggiorna Dati");
+        update.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+
+        JButton back = new JButton("Esci");
+        back.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.add(adminPanel());
+                statsfinal.setVisible(false);
+            }
+        });
+        Box horizontalbutton = Box.createHorizontalBox();  //Box per i due bottoni Update e Esci
+        horizontalbutton.add(back);
+        horizontalbutton.add(update);
+        String[] time = new String[25];
+        time[0] = "seleziona ora";
+        int in = 1;
+        for (int i = 0; i < 10; i++) {
+            time[in] = "0" + String.valueOf(i);
+            in++;
+        }
+        for (int i = 10; i < 24; i++) {
+            time[in] = String.valueOf(i);
+            in++;
+        }
+
+
+        /**Box per visualizzazzione numero complessivo di utenti che hanno effettuato il download
+         * di una o piuù risorse ad intervalli di tempo**/
+        Box downloadrisorse = Box.createHorizontalBox();
+        JComboBox from = new JComboBox(time);
+        JComboBox to = new JComboBox(time);
+        JTextField textDownload = new JTextField(); // visualizzare il numero complessivo di utenti che hanno effetuato il
+        // download nella faascia oraria selezionata.
+
+        downloadrisorse.add(from);
+        downloadrisorse.add(to);
+        downloadrisorse.add(textDownload);
+
+
+        /**Box per numero compelssivo di accessi x corso in una determinata fascia oraria */
+
+        Box numberAccessForCourse = Box.createHorizontalBox();
+
+        JTextField textAccesCourse = new JTextField();
+        JComboBox course = new JComboBox();
+        JComboBox from1 = new JComboBox(time);
+        JComboBox to1 = new JComboBox(time);
+
+
+        numberAccessForCourse.add(course);
+        numberAccessForCourse.add(from1);
+        numberAccessForCourse.add(to1);
+        numberAccessForCourse.add(textAccesCourse);
+
+        /** Box tempo medio di connessione degli studenti per ogni corso*/
+
+        Box connectionForCourse = Box.createHorizontalBox();
+        JComboBox course2 = new JComboBox();
+        JTextField textForConnectioCourse = new JTextField();
+
+        connectionForCourse.add(course2);
+        connectionForCourse.add(textForConnectioCourse);
+
+        /** Box per numero complessivo di download in base al corso selezionato */
+
+        stats2.add(new JLabel("Numero complessivo di utenti che hanno effetuato il download in una determinata fascia oraria (info riguardante TUTTI i corsi):"));
+        stats2.add(downloadrisorse);
+        stats2.add(new JLabel("Numero complessivo di accessi per corso in una determinata fasia oraria:"));
+        stats2.add(numberAccessForCourse);
+        stats2.add(new JLabel("Tempo medio di connessione degli studenti in base al corso selezionato:"));
+        stats2.add(connectionForCourse);
+        stats2.add(new JLabel("Numero complessivo di download in base al corso selezionato:"));
+        stats2.add(downloadForCourse);
+        stats2.add(new JLabel(""));
+        stats2.add(new JLabel(""));
+        stats2.add(new JLabel(""));
+        stats2.add(horizontalbutton);
+
+
+        statsfinal.add(stats);
+        statsfinal.add(stats2);
+
+        contentsCourse.addItemListener(new ItemListener() {
+                                           @Override
+                                           public void itemStateChanged(ItemEvent e) {
+                                               int i = contentsCourse.getSelectedIndex() - 1;
+                                               //info sul corso selezionato
+                                               String[] x = coursesAvailable.get(i);
+                                               //contiene nome, codice, anno
+                                               int userActiveInCourse = 0;
+                                               try {
+                                                   userActiveInCourse = administrator.userActiveInACourse(x[1], Integer.parseInt(x[2]));
+                                               } catch (SQLException e1) {
+                                                   e1.printStackTrace();
+                                               } catch (RemoteException e1) {
+                                                   e1.printStackTrace();
+                                               }
+                                               textContentsCourse.setText(String.valueOf(userActiveInCourse));
+                                               Object timeConnectionAverage = "";
+                                               try {
+                                                   timeConnectionAverage = administrator.timeStatisticsForAllCourses();
+                                               } catch (SQLException e1) {
+                                                   e1.printStackTrace();
+                                               } catch (RemoteException e1) {
+                                                   e1.printStackTrace();
+                                               }
+                                               timeConnctionAverage.setText(String.valueOf(timeConnectionAverage));
+
+                                               // administrator.totalAccessInACoursePage(x[1],Integer.parseInt(x[2]), new Timestamp(timeTo:00), new Timestamp(timeFrom:00) )
+                                               int info = 0;
+                                               try {
+                                                   info = administrator.showResourceDownloadFromCourse(x[1], Integer.parseInt(x[2]));
+                                               } catch (SQLException e1) {
+                                                   e1.printStackTrace();
+                                               } catch (RemoteException e1) {
+                                                   e1.printStackTrace();
+                                               }
+                                               textDownloadForCourse.setText(String.valueOf(info));
+                                               Object averageConnectionByCourse = "";
+                                               try {
+                                                   averageConnectionByCourse = administrator.timeStatisticsForCourse(x[1], Integer.parseInt(x[2]));
+                                               } catch (SQLException e1) {
+                                                   e1.printStackTrace();
+                                               } catch (RemoteException e1) {
+                                                   e1.printStackTrace();
+                                               }
+
+                                               textForConnectioCourse.setText(String.valueOf(averageConnectionByCourse));
+
+                                               day.addItemListener(new ItemListener() {
+
+                                                   @Override
+                                                   public void itemStateChanged(ItemEvent e) {
+                                                       textAccesCourse.setText("Seleziona data e ora");
+
+                                                       month.addItemListener(new ItemListener() {
+                                                           @Override
+                                                           public void itemStateChanged(ItemEvent e) {
+
+                                                               dayTo.addItemListener(new ItemListener() {
+                                                                   @Override
+                                                                   public void itemStateChanged(ItemEvent e) {
+
+                                                                       monthTo.addItemListener(new ItemListener() {
+                                                                           @Override
+                                                                           public void itemStateChanged(ItemEvent e) {
+
+                                                                               from.addItemListener(new ItemListener() {
+                                                                                   @Override
+                                                                                   public void itemStateChanged(ItemEvent e) {
+
+                                                                                       to.addItemListener(new ItemListener() {
+                                                                                           @Override
+                                                                                           public void itemStateChanged(ItemEvent e) {
+                                                                                               String timeTo = to.getSelectedItem().toString();
+                                                                                               String timeFrom = from.getSelectedItem().toString();
+                                                                                               String dayStart = String.valueOf((day.getSelectedItem()));
+
+                                                                                               String monthStart = String.valueOf(month.getSelectedItem());
+                                                                                               String monthEnd = String.valueOf(monthTo.getSelectedItem());
+                                                                                               String dayEnd = String.valueOf(dayTo.getSelectedItem());
+
+
+                                                                                               if (!dayStart.equals("gg") && !monthStart.equals("mm") && !dayEnd.equals("gg") && !monthEnd.equals("mm") && !timeFrom.equals("seleziona ora") && !timeTo.equals("seleziona ora")) {
+                                                                                                   Timestamp to = Timestamp.valueOf("2018" + "-" + monthEnd + "-" + dayEnd + " " + timeFrom + ":" + "00" + ":" + "00");
+                                                                                                   Timestamp from = Timestamp.valueOf("2018" + "-" + monthStart + "-" + dayStart + " " + timeTo + ":" + "00" + ":" + "00");
+
+                                                                                                   System.out.print(from + "    " + to);
+
+                                                                                                   int result = 0;
+                                                                                                   try {
+                                                                                                       result = administrator.totalAccessInACoursePage(x[1], Integer.parseInt(x[2]), from, to);
+
+                                                                                                   } catch (SQLException e1) {
+                                                                                                       e1.printStackTrace();
+                                                                                                   } catch (RemoteException e1) {
+                                                                                                       e1.printStackTrace();
+                                                                                                   }
+                                                                                                   textAccesCourse.setText(String.valueOf("da:" + from + "a:" + to + "sono stati eseguiti " + result + "accessi"));
+                                                                                                   try {
+                                                                                                       textDownload.setText(String.valueOf(administrator.showUserDownloadedInTime(from, to)));
+                                                                                                   } catch (RemoteException e1) {
+                                                                                                       e1.printStackTrace();
+                                                                                                   }
+
+
+                                                                                               }
+
+                                                                                               from.setSelectedIndex(0);
+                                                                                               to.setSelectedIndex(0);
+                                                                                               day.setSelectedIndex(0);
+                                                                                               dayTo.setSelectedIndex(0);
+                                                                                               month.setSelectedIndex(0);
+                                                                                               monthTo.setSelectedIndex(0);
+
+                                                                                           }
+
+                                                                                       });
+
+                                                                                   }
+                                                                               });
+
+
+                                                                           }
+                                                                       });
+                                                                   }
+                                                               });
+                                                           }
+                                                       });
+                                                   }
+                                               });
+
+                                           }
+
+                                       }
+        );
+
+
+        statsfinal.add(timeForStat);
+        Container container = getContentPane();
+        container.add(statsfinal);
+        setVisible(true);
+        setSize(1100, 400);
+        return statsfinal;
+    }
+    public JPanel statisticTeacher() throws RemoteException, SQLException {
+        JPanel statfinal = new JPanel();
+        statfinal.setLayout(new GridLayout(3, 0));
+        JPanel stat = new JPanel();
+        stat.setLayout(new GridLayout(1, 2));
+        JPanel stat2 = new JPanel();
+        stat2.setLayout(new GridLayout(2, 2));
+
+        JTextField timeConnctionAverage = new JTextField();
+        JTextField numberOfDownload = new JTextField();
+
+
+        JTextField textContentsCourse = new JTextField();
+
+
+        String[] dayVector = new String[32];
+        dayVector[0] = "gg";
+        for (int i = 1; i < 10; i++)
+            dayVector[i] = "0" + String.valueOf(i);
+
+        for (int i = 10; i < 32; i++)
+            dayVector[i] = String.valueOf(i);
+
+        String[] monthVector = new String[13];
+        monthVector[0] = "mm";
+        for (int i = 1; i < 10; i++)
+            monthVector[i] = "0" + String.valueOf(i);
+
+        for (int i = 10; i < 13; i++)
+            monthVector[i] = String.valueOf(i);
+
+
+        JComboBox day = new JComboBox(dayVector);
+        JComboBox month = new JComboBox(monthVector);
+        JComboBox dayTo = new JComboBox(dayVector);
+        JComboBox monthTo = new JComboBox(monthVector);
+
+        String[] time = new String[25];
+        time[0] = "seleziona ora";
+        int in = 1;
+        for (int i = 0; i < 10; i++) {
+            time[in] = "0" + String.valueOf(i);
+            in++;
+        }
+        for (int i = 10; i < 24; i++) {
+            time[in] = String.valueOf(i);
+            in++;
+        }
+
+        JComboBox from = new JComboBox(time);
+        JComboBox to = new JComboBox(time);
+
+        List<String[]> courseByTeacher = teacher.getInfoCoursesTeached();
+        String[] comboTeached = new String[courseByTeacher.size() + 1];
+        int i = 1;
+        comboTeached[0] = "--------";
+        for (String[] ct : courseByTeacher) {
+            comboTeached[i] = "nome: " + ct[0] + "  codice: " + ct[1] + "  anno:" + ct[2];
+            i++;
+        }
+
+        JPanel comboPanel = new JPanel();
+        comboPanel.setLayout(new GridLayout(3, 3));
+
+        Box comboDay1 = Box.createHorizontalBox();
+        comboDay1.add(day); //giorno1
+        comboDay1.add(month);//  mese1
+
+        Box comboDay2 = Box.createHorizontalBox();
+        comboDay2.add(dayTo); // giorno2
+        comboDay2.add(monthTo);//  mese2
+
+        comboPanel.add(new JLabel("Da:"));
+        comboPanel.add(comboDay1);
+        comboPanel.add(from); //ora1
+        comboPanel.add(new JLabel(""));
+        comboPanel.add(new JLabel("a:"));
+        comboPanel.add(comboDay2);
+        comboPanel.add(to); //ora2
+        comboPanel.add(new JLabel(""));
+        comboPanel.add(new JLabel("Seleziona Corso: "));
+        JComboBox contentsCourse = new JComboBox(comboTeached);
+        comboPanel.add(contentsCourse); //corsi
+        comboPanel.add(new JLabel(""));
+
+
+        stat.add(new JLabel("Tempo medio di connessione di studenti alle pagine del corso:"));
+        stat.add(timeConnctionAverage);
+
+
+        stat2.add(new JLabel("Numero complessivo di utenti che stanno interagendo con i contenuti del corso"));
+        stat2.add(textContentsCourse);
+        stat2.add(new JLabel("Numero complessivo di utenti che hanno effettuato il download in un tempo prefissato"));
+        stat2.add(numberOfDownload);
+
+
+        JButton back = new JButton("Esci");
+        back.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.add(teacherPanel());
+                stat.setVisible(false);
+            }
+        });
+
+        contentsCourse.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                int index = contentsCourse.getSelectedIndex() - 1;
+                String[] info = courseByTeacher.get(index);
+                int userActiveInCourse = 0;
+                try {
+                    userActiveInCourse = teacher.userActiveInACourse(info[1], Integer.parseInt(info[2]));
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                } catch (RemoteException e1) {
+                    e1.printStackTrace();
+                }
+                textContentsCourse.setText(String.valueOf(userActiveInCourse));
+                Object averageConnectionByCourse = "";
+                try {
+                    averageConnectionByCourse = teacher.timeStatisticsForCourse(info[1], Integer.parseInt(info[2]));
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                } catch (RemoteException e1) {
+                    e1.printStackTrace();
+                }
+
+                timeConnctionAverage.setText(String.valueOf(averageConnectionByCourse));
+
+                day.addItemListener(new ItemListener() {
+
+                    @Override
+                    public void itemStateChanged(ItemEvent e) {
+                        numberOfDownload.setText("Seleziona data e ora");
+
+                        month.addItemListener(new ItemListener() {
+
+                            @Override
+                            public void itemStateChanged(ItemEvent e) {
+                                System.out.print("sono entrato in month");
+
+                                dayTo.addItemListener(new ItemListener() {
+                                    @Override
+                                    public void itemStateChanged(ItemEvent e) {
+                                        System.out.print("sono entrato in dayTo");
+
+                                        monthTo.addItemListener(new ItemListener() {
+                                            @Override
+                                            public void itemStateChanged(ItemEvent e) {
+                                                System.out.print("sono entrato in monthTo");
+
+                                                from.addItemListener(new ItemListener() {
+                                                    @Override
+                                                    public void itemStateChanged(ItemEvent e) {
+                                                        System.out.print("sono entrato in from");
+                                                        to.addItemListener(new ItemListener() {
+                                                            @Override
+                                                            public void itemStateChanged(ItemEvent e) {
+                                                                System.out.print("sono entrato in to");
+                                                                String timeTo = to.getSelectedItem().toString();
+                                                                String timeFrom = from.getSelectedItem().toString();
+                                                                String dayStart = String.valueOf((day.getSelectedItem()));
+
+                                                                String monthStart = String.valueOf(month.getSelectedItem());
+                                                                String monthEnd = String.valueOf(monthTo.getSelectedItem());
+                                                                String dayEnd = String.valueOf(dayTo.getSelectedItem());
+
+
+                                                                if (!dayStart.equals("gg") && !monthStart.equals("mm") && !dayEnd.equals("gg") && !monthEnd.equals("mm") && !timeFrom.equals("seleziona ora") && !timeTo.equals("seleziona ora")) {
+                                                                    Timestamp to = Timestamp.valueOf("2018" + "-" + monthEnd + "-" + dayEnd + " " + timeFrom + ":" + "00" + ":" + "00");
+                                                                    Timestamp from = Timestamp.valueOf("2018" + "-" + monthStart + "-" + dayStart + " " + timeTo + ":" + "00" + ":" + "00");
+
+                                                                    System.out.print(from + "    " + to);
+
+                                                                    try {
+                                                                        numberOfDownload.setText(String.valueOf(teacher.showUserDownloadedInTime(from, to)));
+                                                                    } catch (RemoteException e1) {
+                                                                        e1.printStackTrace();
+                                                                    }
+
+
+                                                                }
+
+                                                            }
+
+                                                        });
+
+                                                    }
+                                                });
+
+
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+
+        statfinal.add(stat);
+        statfinal.add(comboPanel);
+        statfinal.add(stat2);
+        Container container = getContentPane();
+        container.add(statfinal);
+        setVisible(true);
+        setSize(1000, 300);
+        return statfinal;
+
+    }
+
+
+    public JPanel uploadResource(Node node) {
+        JPanel upload = new JPanel();
+        //upload.setLayout(new FlowLayout());
+        JTextField resourceName = new JTextField(30);
+
+        upload.setLayout(new GridLayout(8, 2));
+
+        String[] resource = {"----", "Sezione", "Sottosezione", "Cartella", "File"};
+        String[] typology = {"----", "pubblica", "privata"};
+        JComboBox destination = new JComboBox();
+        destination.addItem("--------");
+        JButton back = new JButton("Esci");
+        JButton up = new JButton("Carica");
+        JTextField path = new JTextField(30);
+        JComboBox type = new JComboBox(typology);
+        JComboBox resourceType = new JComboBox(resource);
+        String course = node.getCode();
+        int year = node.getYear();
+        JTextArea descriptionArea = new JTextArea();
+        descriptionArea.setSize(50, 100);
+
+        Box horizontalButton = Box.createHorizontalBox();
+        horizontalButton.add(up);
+        horizontalButton.add(back);
+
+        upload.add(resourceName);
+        upload.add(new JLabel("Seleziona il tipo di risorsa che vorresti caricare:   "));
+        upload.add(resourceType);
+        upload.add(new JLabel("Specifica il nome della risorsa:"));
+        upload.add(resourceName);
+        upload.add(new JLabel("Specificare una descrizione per la risorsa:"));
+
+        upload.add(descriptionArea);
+        upload.add(new JLabel("Selezionare visibilita'   "));
+        upload.add(type);
+
+        JPanel father = new JPanel(new GridLayout(2, 2));
+        father.add(new JLabel("Specifica Risorsa Padre:   "));
+        father.add(destination);
+        JPanel sectionAvailablePanel = new JPanel();
+        sectionAvailablePanel.setLayout(new GridLayout(1, 2));
+        sectionAvailablePanel.add(new JLabel("nome sezione padre"));
+        JComboBox section = new JComboBox();
+        sectionAvailablePanel.add(section);
+
+        father.add(new JLabel(""));
+        father.add(sectionAvailablePanel);
+        upload.add(father);
+        sectionAvailablePanel.setVisible(false);
+
+        upload.add(destination);
+        upload.add(new JLabel("inserire il percorso della risorsa da caricare:    "));
+        upload.add(path);
+        upload.add(new JLabel(""));
+        upload.add(new JLabel(""));
+        upload.add(new JLabel(""));
+        upload.add(horizontalButton);
+
+
+        resourceType.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                destination.removeItem("Sezione");
+                destination.removeItem("Sottosezione");
+                destination.removeItem("Cartella");
+                destination.removeItem("File");
+
+                int i = resourceType.getSelectedIndex();
+                switch (i) {
+                    //sezione
+                    case 1:
+                        destination.addItem("Sezione");
+                        path.setEditable(false);
+                        break;
+                    //sottosezione
+                    case 2:
+                        destination.addItem("Sezione");
+                        path.setEditable(false);
+                        break;
+                    //cartella
+                    case 3:
+                        destination.addItem("Sottosezione");
+                        destination.addItem("Sezione");
+                        path.setEditable(false);
+                        break;
+                    //file
+                    case 4:
+                        destination.addItem("Sottosezione");
+                        destination.addItem("Sezione");
+                        destination.addItem("Cartella");
+                        path.setEditable(true);
+                        break;
+                }
+            }
+        });
+
+
+        //vado a creare il pannello che stampa i nomi delle sezioni disponibili:
+
+        destination.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                List<Node> sectionAvailable = node.getChildren();
+                section.removeAllItems();
+                section.addItem("---");
+
+                if (destination.getSelectedItem().equals("Sezione") && resourceType.getSelectedIndex() > 1 ) {
+                    for (Node n : sectionAvailable)
+                        section.addItem(n.getName());
+
+                    sectionAvailablePanel.setVisible(true);
+                }
+                if (destination.getSelectedItem().equals("Sottosezione") && resourceType.getSelectedIndex() > 1) {
+                    //devo trovare tutte le sottosezioni disponibili per un determinato CORSO
+                    for (Node subsectionAvailable : sectionAvailable) {
+                        {
+                            List<Node> sectionChildren = subsectionAvailable.getChildren();
+                            for (Node x : sectionChildren) {
+                                if (x.getFile().equals("noFile")) {
+                                    section.addItem(x.getName());
+                                    System.out.print(x.getName());
+                                }
+                            }
+                        }
+                    }
+                    sectionAvailablePanel.setVisible(true);
+                }
+                if (destination.getSelectedItem().equals("Cartella") && resourceType.getSelectedIndex()>1){
+                    // devo mostrare tutte le cartelle
+                    List<Node> subsection = new ArrayList<Node>();
+                    for (Node subsectionAvailable : sectionAvailable){
+                        subsection.addAll(subsectionAvailable.getChildren());
+                    }
+
+                    for (Node x : subsection) {
+                        if (x.getFile().equals("false")) {
+                            //e' una cartella.
+                            section.addItem(x.getName());
+                        }
+                        if (x.getFile().equals("noFile")) {
+                            //e' una sottosezione che puo' avere cartelle o file o entrambi
+                            for (Node nod : x.getChildren()) {
+                                if (nod.getFile().equals("false")) {
+                                    //e' una cartella. guardo al suo interno
+                                    section.addItem(x.getName());
+
+                                }
+                            }
+                        }
+                    }
+                    sectionAvailablePanel.setVisible(true);
+                }
+            }
+        });
+
+        up.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                List<Node> s = node.getChildren();
+                String visibility = "";
+                String nodeCode = "";
+                //padre di cartella o file messi direttamente nella sezione
+                if (destination.getSelectedItem().equals("Sezione")) {
+                    for (Node n : s) {
+                        if (n.getName().equals(section.getSelectedItem().toString())) {
+                            //significa che ho trovato il nodo
+                            nodeCode = n.getCode();
+                            visibility = n.getVisibility();
+                        }
+                    }
+                }
+
+                //padre di cartella o file in sottosezione
+                if (destination.getSelectedItem().equals("Cartella")) {
+                    List<Node> sectionChildren1 = new ArrayList<Node>();
+                    for (Node a : s)
+                        sectionChildren1.addAll(a.getChildren());
+
+                    for (Node x : sectionChildren1) {
+                        if (x.getFile().equals("false")) {
+                            //e' una cartella. guardo al suo interno
+                            nodeCode = x.getCode();
+                            visibility = x.getVisibility();
+                        }
+                        if (x.getFile().equals("noFile")) {
+                            //e' una sottosezione che puo' avere cartelle o file o entrambi
+                            for (Node nod : x.getChildren()) {
+                                if (nod.getFile().equals("false")) {
+                                    //e' una cartella. guardo al suo interno
+                                    nodeCode = nod.getCode();
+                                    visibility = x.getVisibility();
+
+                                }
+                            }
+                        }
+                    }
+                }
+                if (destination.getSelectedItem().equals("Sottosezione")) {
+                    for (Node c : s) {
+                        {
+                            List<Node> sectionChildren = c.getChildren();
+                            for (Node x : sectionChildren) {
+                                if (x.getFile().equals("noFile") && x.getName().equals(section.getSelectedItem().toString())) {
+                                    nodeCode = x.getCode();
+                                    visibility = x.getVisibility();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //padre di file in cartella (la quale puo' o meno appartenere a sottosezione)
+
+
+
+                boolean flag = true;
+                int i = resourceType.getSelectedIndex();
+                if (resourceName.getText().equals("")) {
+                    JOptionPane.showMessageDialog(resourceName, "attenzione! il nome della sezione/sottosezione/risorsa non può essere vuoto");
+                    flag = false;
+
+                }
+                if (type.getSelectedIndex() == 0) {
+                    JOptionPane.showMessageDialog(resourceName, "attenzione! Tipologia (pubblica o privata) non specificata");
+                    flag = false;
+                }
+                if (flag) {
+                    switch (i) {
+                        //nessuna selezione
+                        case 0:
+                            //non posso aggiungere la tipologia di risorsa/sezione indicata
+                            JOptionPane.showMessageDialog(resourceType, "ERRORE, controlla i campi inseriti");
+                            break;
+                        //pubblica
+                        case 1:
+
+                            // se premo up quando c'è selezionata la "sezione" devo richiamare metodo database:
+                            boolean confirm = false;
+                            try {
+                                confirm = teacher.addCourseSection(resourceName.getText(), descriptionArea.getText(), course, year, type.getSelectedItem().toString());
+                            } catch (RemoteException e1) {
+                                e1.printStackTrace();
+                            }
+                            if (confirm)
+                                JOptionPane.showMessageDialog(resourceName, "Sezione aggiunta correttamente!");
+
+                            break;
+                        case 2:
+                            //voglio inserire una sottosezione. Faccio la print di tutte le sezioni disponibili e faccio scegliere all'utente
+                            //voglio andare a determinare tutte le proprieta del padre: possiedo il nodo.
+
+
+                            if (visibility.equals(type.getSelectedItem()) || visibility.equals("pubblica") && type.getSelectedItem().equals("privata")) {
+                                try {
+                                    flag = teacher.addCourseSubsection(resourceName.getText(), descriptionArea.getText(), course, year, Integer.parseInt(nodeCode), type.getSelectedItem().toString());
+                                } catch (RemoteException e1) {
+                                    e1.printStackTrace();
+                                }
+                                if (flag)
+                                    JOptionPane.showMessageDialog(type, "La sottosezione e' stata inserita correttamente!");
+                                else
+                                    JOptionPane.showMessageDialog(type, "Problemi con inserimento sottosezione");
+                            } else {
+                                int reply = JOptionPane.showConfirmDialog(resourceName, "Attenzione: la visibilita' specificata è pubblica e la sezione ha visibilita' privata. Si intende propagare la modifica sulla visibilita' della sezione?  ");
+                                if (reply == JOptionPane.YES_OPTION) {
+                                    //propago la modifica
+
+                                    //1 aggiungo
+                                    //2 modifico
+                                    try {
+                                        flag = teacher.addCourseSubsection(resourceName.getText(), descriptionArea.getText(), course, year, Integer.parseInt(nodeCode), type.getSelectedItem().toString());
+                                    } catch (RemoteException e1) {
+                                        e1.printStackTrace();
+                                    }
+                                    if (flag)
+                                    //se ho inserito correttamente la tupla, modifico la visibilita' del padre
+                                    {
+                                        try {
+                                            flag = teacher.changeVisibility(nodeCode, "pubblica");
+                                        } catch (RemoteException e1) {
+                                            e1.printStackTrace();
+                                        }
+                                    }
+                                    if (flag)
+                                        //sia la modifica che upload sono andati a buon fine
+                                        JOptionPane.showMessageDialog(resourceName, "modifica ed upload andati a buon fine");
+
+
+                                }
+                            }
+                            break;
+
+                        case 3:
+                            //voglio aggiungere una cartella
+                            //una cartella puo essere inserita in:
+                            //-sezione -->fatto
+                            //-sottosezione
+                            //1 devo controllare se la risorsa padre specificata e' sezione o sottosezione. in questo ultimo caso
+                            //modificare i valori della comboBox
+
+                            byte[] byteFile = new byte[0];
+
+                            if (destination.getSelectedItem().equals("Sezione")) {
+                                if (visibility.equals(type.getSelectedItem()) || (visibility.equals("pubblica") && type.getSelectedItem().equals("privata"))) {
+                                    //vado a controllare la correlazione tra visibilita' inserita e visibilita' della sezione
+                                    //posso inserire la cartella
+                                    {
+
+                                        try {
+                                            boolean confir=teacher.insertFile(nodeCode, resourceName.getText(), descriptionArea.getText(), byteFile, nodeCode, type.getSelectedItem().toString(), "cartella");
+                                            System.out.println(""+nodeCode+ resourceName.getText()+ descriptionArea.getText()+ byteFile+ nodeCode+ type.getSelectedItem().toString());
+                                            if (confir)
+                                                JOptionPane.showMessageDialog(resourceName,"cartella caricata correttamente");
+                                        } catch (IOException e1) {
+                                           e1.printStackTrace();
+                                        } catch (SQLException e1) {
+                                            e1.printStackTrace();
+                                        }
+                                    }
+
+                                }
+                                //altrimenti devo propagare la modifica
+                                else {
+
+                                    int reply = JOptionPane.showConfirmDialog(resourceName, "Attenzione: la visibilita' specificata è pubblica e la risorsa ha visibilita' privata. Si intende propagare la modifica sulla visibilita' della sezione?  ");
+                                    if (reply == JOptionPane.YES_OPTION) {
+                                        try {
+                                            //   flag=  teacher.insertFile(nodeCode, resourceName.getText(), descriptionArea.getText(), byteFile, nodeCode, type.getSelectedItem().toString(), "cartella");
+                                            if (flag)
+                                                flag = teacher.changeVisibility(nodeCode, "pubblica");
+                                        } catch (RemoteException e1) {
+                                            e1.printStackTrace();
+
+                                            if (flag)
+                                                JOptionPane.showMessageDialog(resourceName, "modifica ed upload andati a buon fine");
+
+                                        }
+                                    }
+
+
+                                }
+                            }
+                            if (destination.getSelectedItem().equals("Sottosezione")){
+
+                            }
+
+                            break;
+                        case 4:
+                            //l'utente seleziona file
+                            if (destination.getSelectedItem().toString().equals("Sezione")) {
+
+                                try {
+                                    byte[] array = Files.readAllBytes(new File(path.getText()).toPath());
+                                    String [] extension=path.getText().split(Pattern.quote("."));
+                                    //extension[1] contiene la tipologia di estensione
+                                  flag= teacher.insertFile(nodeCode,resourceName.getText()+"."+extension[1],descriptionArea.getText(),array,nodeCode,type.getSelectedItem().toString(),"file");
+                                  if (flag)
+                                      JOptionPane.showMessageDialog(path,"file inserito correttamente!");
+                                } catch (IOException e1) {
+                                    e1.printStackTrace();
+                                } catch (SQLException e1) {
+                                    e1.printStackTrace();
+                                }
+
+
+                            }
+                            if (destination.getSelectedItem().toString().equals("Sottosezione"))
+                            break;
+                    }
+
+                }
+            }
+
+        });
+
+        back.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mainContainer.add(teacherPanel());
+                upload.setVisible(false);
+            }
+        });
+
+
+        Container container = getContentPane();
+        container.add(upload);
+
+
+        setVisible(true);
+        setSize(800, 400);
+        return upload;
+    }
+
+    public JPanel deleteInTree(Node node) {
+        JComboBox action = new JComboBox();
+        action.addItem("-----");
+        action.addItem("Modifica");
+        action.addItem("Elimina");
+        JPanel mainPanel = new JPanel(new GridLayout(2, 1));
+        mainPanel.add(action);
+        JPanel modify = new JPanel();
+        modify.setLayout(new GridLayout(5, 2));
+        //1 modifica
+
+        String[] modifyCombo = {"-----", "titolo", "descrizione", "visibilita'"};
+        JComboBox what = new JComboBox(modifyCombo);
+        modify.add(new JLabel("cosa si intende modificare/eliminare?"));
+        modify.add(what);
+        modify.add(new JLabel("indicare su cosa si vuole fare tale modifica/eliminazione :"));
+        JComboBox resource = new JComboBox();
+        modify.add(resource);
+        modify.add(new JLabel("In base alla ricerca effettuata, e' possibile modificare/eliminare i seguenti campi:"));
+        JComboBox modifyLabels = new JComboBox();
+        modify.add(modifyLabels);
+        modify.add(new JLabel("inserire nuovo valore:"));
+        modify.add(new JLabel("nuova visibilita':"));
+        String[] vis = {"----", "pubblica", "privata"};
+        JComboBox visibility = new JComboBox(vis);
+        modify.add(visibility);
+        JTextField titleDescrVisibility = new JTextField();
+        modify.add(titleDescrVisibility);
+        modifyLabels.addItem("-------");
+        resource.addItem("-----");
+        mainPanel.add(modify);
+
+        what.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                resource.removeItem("File");
+                resource.removeItem("Cartella");
+                resource.removeItem("Sezione");
+                resource.removeItem("Sottosezione");
+
+                switch (what.getSelectedItem().toString()) {
+                    case "titolo":
+                        resource.addItem("Sezione");
+                        resource.addItem("Sottosezione");
+                        break;
+
+                    case "descrizione":
+                        resource.addItem("Sezione");
+                        resource.addItem("Sottosezione");
+                        break;
+                    case "visibilita'":
+                        resource.addItem("Sezione");
+                        resource.addItem("Sottosezione");
+                        resource.addItem("File");
+                        resource.addItem("Cartella");
+                        break;
+                }
+            }
+        });
+
+
+        resource.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                List<Node> sectionTitle = node.getChildren();
+                modifyLabels.removeAllItems();
+
+                switch (resource.getSelectedIndex()) {
+
+                    case 1:
+
+
+                        for (Node n : sectionTitle) {
+                            System.out.println(n.getName());
+                            modifyLabels.addItem(n.getName());
+                        }
+                        break;
+                    case 2:
+                        List<Node> child = node.getChildren();
+                        for (Node c : child) {
+                            {
+                                List<Node> sectionChildren = c.getChildren();
+                                for (Node x : sectionChildren) {
+                                    if (x.getFile().equals("noFile")) {
+                                        modifyLabels.addItem(x.getName());
+                                    }
+                                }
+                            }
+
+                        }
+                        break;
+                    case 3:
+                        //file
+                        List<Node> sectionChildren = new ArrayList<Node>();
+                        for (Node a : sectionTitle)
+                            sectionChildren.addAll(a.getChildren());
+
+                        for (Node x : sectionChildren) {
+                            if ((x.getFile()).equals("true"))
+                                //file che appartiene a sezione
+                                modifyLabels.addItem(x.getName());
+                            if (x.getFile().equals("false")) {
+                                //e' una cartella. guardo al suo interno
+
+                                for (Node nod : x.getChildren()) {
+                                    if (nod.getFile().equals("true"))
+                                        modifyLabels.addItem(nod.getName());
+                                }
+                            }
+                            if (x.getFile().equals("noFile")) {
+                                //e' una sottosezione che puo' avere cartelle o file o entrambi
+                                for (Node nod : x.getChildren()) {
+                                    if (nod.getFile().equals("true"))
+                                        modifyLabels.addItem(nod.getName());
+
+                                    if (nod.getFile().equals("false")) {
+                                        //e' una cartella. guardo al suo interno
+
+                                        for (Node node1 : nod.getChildren()) {
+                                            if (node1.getFile().equals("true"))
+                                                modifyLabels.addItem(node1.getName());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        break;
+                    case 4:
+
+                        //cartella
+                        List<Node> sectionChildren1 = new ArrayList<Node>();
+                        for (Node a : sectionTitle)
+                            sectionChildren1.addAll(a.getChildren());
+
+                        for (Node x : sectionChildren1) {
+                            if (x.getFile().equals("false")) {
+                                //e' una cartella. guardo al suo interno
+
+                                modifyLabels.addItem(x.getName());
+                            }
+                            if (x.getFile().equals("noFile")) {
+                                //e' una sottosezione che puo' avere cartelle o file o entrambi
+                                for (Node nod : x.getChildren()) {
+                                    if (nod.getFile().equals("false")) {
+                                        //e' una cartella. guardo al suo interno
+                                        modifyLabels.addItem(nod.getName());
+
+                                    }
+                                }
+                            }
+                        }
+                        break;
+
+
+                }
+            }
+        });
+
+        JButton ok = new JButton("OK");
+        mainPanel.add(ok);
+        ok.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String resourceCode = "";
+                String ac = action.getSelectedItem().toString().toString();
+                List<Node> n = node.getChildren();
+                List<Node> child = node.getChildren();
+                Node nodeToUpload = new Node("", "", "", "");
+                String sectionCode = "";
+                String whatToChange = what.getSelectedItem().toString();
+                // determino il codice della sezione o sottosezione
+                if (resource.getSelectedItem().toString().equals("Sezione")) {
+                    for (Node x : n)
+                        if (x.getName().equals(modifyLabels.getSelectedItem().toString())) {
+                            sectionCode = x.getCode();
+                            nodeToUpload = x;
+                        }
+
+
+                }
+                if (resource.getSelectedItem().toString().equals("Sottosezione")) {
+
+                    for (Node c : child) {
+                        {
+                            List<Node> sectionChildren = c.getChildren();
+                            for (Node x : sectionChildren) {
+                                if (x.getFile().equals("noFile") && x.getName().equals(modifyLabels.getSelectedItem().toString())) {
+                                    sectionCode = x.getCode();
+                                    nodeToUpload = x;
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                if (resource.getSelectedItem().toString().equals("File")) {
+                    //devo cercare tutti i file nell'albero
+
+                    List<Node> sectionChildren = new ArrayList<Node>();
+                    for (Node a : n)
+                        sectionChildren.addAll(a.getChildren());
+
+                    for (Node x : sectionChildren) {
+                        if ((x.getFile()).equals("true"))
+                            //file che appartiene a sezione
+                            resourceCode = x.getCode();
+                        if (x.getFile().equals("false")) {
+                            //e' una cartella. guardo al suo interno
+
+                            for (Node nod : x.getChildren()) {
+                                if (nod.getFile().equals("true")){
+                                    resourceCode = nod.getCode();
+                                nodeToUpload = x;
+                                }
+                            }
+                        }
+                        if (x.getFile().equals("noFile")) {
+                            //e' una sottosezione che puo' avere cartelle o file o entrambi
+                            for (Node nod : x.getChildren()) {
+                                if (nod.getFile().equals("true")){
+                                    resourceCode = nod.getCode();
+                                    nodeToUpload = x;
+                                }
+
+                                if (nod.getFile().equals("false")) {
+                                    //e' una cartella. guardo al suo interno
+
+                                    for (Node node1 : nod.getChildren()) {
+                                        if (node1.getFile().equals("true")){
+                                            resourceCode = node1.getCode();
+                                            nodeToUpload = x;
+                                }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+                if (resource.getSelectedItem().toString().equals("Cartella")) {
+                    List<Node> sectionChildren1 = new ArrayList<Node>();
+                    for (Node a : n)
+                        sectionChildren1.addAll(a.getChildren());
+
+                    for (Node x : sectionChildren1) {
+                        if (x.getFile().equals("false")) {
+                            //e' una cartella. guardo al suo interno
+                            resourceCode = x.getCode();
+                            nodeToUpload = x;
+                        }
+                        if (x.getFile().equals("noFile")) {
+                            //e' una sottosezione che puo' avere cartelle o file o entrambi
+                            for (Node nod : x.getChildren()) {
+                                if (nod.getFile().equals("false")) {
+                                    //e' una cartella. guardo al suo interno
+                                    nodeToUpload = x;
+                                    resourceCode = nod.getCode();
+
+                                }
+                            }
+                        }
+                    }
+                }
+
+                switch (ac) {
+                    case "Modifica":
+
+                        //devo cercare il codice del campo da modificare
+                        String newField = titleDescrVisibility.getText();
+
+                        if (whatToChange.equals("titolo") || whatToChange.equals("descrizione")) {
+                            try {
+                                boolean flag = teacher.changeSectionInformation(whatToChange, sectionCode, newField);
+                                if (flag)
+                                    JOptionPane.showMessageDialog(modifyLabels, whatToChange + " modificata/o correttamente con " + newField);
+
+
+                            } catch (RemoteException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                        if (whatToChange.equals("visibilita'")) {
+                            int reply = JOptionPane.showConfirmDialog(titleDescrVisibility, "Attenzione: modificando la visibilita', tale modifica verra' propagata anche al contenuto di cio' che si vuole modificare. Continuare?");
+                            if (reply == JOptionPane.YES_OPTION) {
+                                boolean flag = false;
+                                try {
+                                    if (visibility.getSelectedIndex() != 0)
+                                        flag = teacher.changeVisibility(nodeToUpload, visibility.getSelectedItem().toString());
+                                } catch (RemoteException e1) {
+                                    e1.printStackTrace();
+                                }
+                                if (flag)
+                                    JOptionPane.showMessageDialog(titleDescrVisibility, "operazione andata a buon fine");
+                            }
+                        }
+
+                        break;
+
+                    case "Elimina":
+                        int reply = JOptionPane.showConfirmDialog(resource, "ATTENZIONE! Se la sezione/sottosezione contiene a sua volta risorse, anche esse verranno elimnate. Procedere?");
+                        if (reply == JOptionPane.YES_OPTION) {
+                            //vado a vedere cosa l'utente vuole eliminare
+                            if (resource.getSelectedItem().equals("Sezione") || resource.getSelectedItem().equals("Sottosezione"))
+                            //opero sulla stessa tabella
+                            {
+                                boolean b = false;
+                                try {
+                                    b = teacher.deleteSection(sectionCode);
+                                } catch (RemoteException e1) {
+                                    e1.printStackTrace();
+                                }
+                                if (b)
+                                    JOptionPane.showMessageDialog(resource, "Eliminazione avvenuta con successo.");
+
+
+                            }
+                            if (resource.getSelectedItem().equals("File") || resource.getSelectedItem().equals("Cartella")) {
+                                boolean b = false;
+                                try {
+                                    System.out.print("resource code" + resourceCode);
+                                    b = teacher.deleteFile(resourceCode);
+                                } catch (RemoteException e1) {
+                                    e1.printStackTrace();
+                                }
+                                if (b)
+                                    JOptionPane.showMessageDialog(resource, "Eliminazione avvenuta con successo.");
+                            }
+                        }
+
+
+                        break;
+                }
+
+            }
+        });
+
+        setVisible(true);
+        setSize(600, 400);
+        return mainPanel;
+    }
+        
+   
 
     public static void main(String[] args) throws RemoteException, NotBoundException, SQLException {
         SeatInGui sIn = new SeatInGui();
